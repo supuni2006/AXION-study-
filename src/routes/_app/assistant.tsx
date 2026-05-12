@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Send, Sparkles, User, Loader2, MessageCircle, Brain, Wand2, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/assistant")({
+  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s.q === "string" ? s.q : undefined }),
   head: () => ({ meta: [{ title: "AI Assistant — AXION" }] }),
   component: Assistant,
 });
@@ -25,6 +26,7 @@ const suggestions = [
 ];
 
 function Assistant() {
+  const { q } = Route.useSearch();
   const [persona, setPersona] = useState<Persona>("chatgpt");
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: "Hi! Pick a teacher on the left, then ask anything — concepts, summaries, or practice quizzes." },
@@ -32,6 +34,7 @@ function Assistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const sentRef = useRef<string | null>(null);
 
   async function send(text: string) {
     if (!text.trim() || loading) return;
@@ -104,6 +107,14 @@ function Assistant() {
       abortRef.current = null;
     }
   }
+
+  useEffect(() => {
+    if (q && sentRef.current !== q) {
+      sentRef.current = q;
+      send(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
 
   const active = TEACHERS.find((t) => t.id === persona)!;
 
