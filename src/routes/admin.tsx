@@ -154,6 +154,38 @@ function Admin() {
   const [libFilter, setLibFilter] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const generatorRef = useRef<HTMLDivElement | null>(null);
+
+  async function renameMaterial(id: string) {
+    const t = editingTitle.trim();
+    if (!t) { toast.error("Title can't be empty"); return; }
+    const { error } = await supabase.from("materials").update({ title: t.slice(0, 120) }).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setEditingId(null); setEditingTitle("");
+    toast.success("Renamed");
+    load();
+  }
+
+  async function reuseMaterial(m: Material) {
+    if (!m.storage_path) {
+      setPasted(`${m.title}\n${m.subject}\n${m.description ?? ""}`);
+      setTitle(m.title); setSubject(m.subject);
+      generatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      toast.message("Loaded metadata — paste or upload more text to enrich the quiz.");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.storage.from("materials").download(m.storage_path);
+      if (error || !data) throw error ?? new Error("download failed");
+      const f = new File([data], m.storage_path.split("/").pop() ?? "material.pdf", { type: data.type || "application/pdf" });
+      setFile(f);
+      setTitle(m.title); setSubject(m.subject);
+      generatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      toast.success(`Loaded "${m.title}" — click Generate to make a fresh quiz.`);
+    } catch (e: any) {
+      console.error(e); toast.error("Couldn't load file from library");
+    }
+  }
 
   async function load() {
     setLoading(true);
