@@ -1,18 +1,107 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Users, Upload, FilePlus2, BarChart3, Search, Lock, Wand2, Loader2,
-  CheckCircle2, XCircle, FileText, Sparkles,
+  CheckCircle2, XCircle, FileText, Sparkles, GraduationCap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { z } from "zod";
 
-export const Route = createFileRoute("/_app/admin")({
+export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Teacher Panel — AXION" }] }),
-  component: Admin,
+  component: AdminGate,
 });
+
+function AdminGate() {
+  const { session, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
+      </div>
+    );
+  }
+  if (!session) return <TeacherSignIn />;
+  return <Admin />;
+}
+
+function TeacherSignIn() {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+
+  async function google() {
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: `${window.location.origin}/admin`,
+    });
+    if (result.error) {
+      toast.error("Google sign-in failed");
+      setBusy(false);
+      return;
+    }
+    if (result.redirected) return;
+    setBusy(false);
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl py-12">
+      <div className="glass rounded-3xl p-8 text-center">
+        <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-hero text-primary-foreground shadow-glow">
+          <GraduationCap className="h-7 w-7" />
+        </span>
+        <h1 className="mt-5 text-3xl font-bold">Teacher <span className="text-gradient">Control Center</span></h1>
+        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          Sign in to upload assignments, generate AI quizzes from PDFs, and track your students' progress.
+        </p>
+
+        <button
+          type="button"
+          onClick={google}
+          disabled={busy}
+          className="mx-auto mt-7 flex w-full max-w-sm items-center justify-center gap-3 rounded-full border-2 border-primary/30 bg-card px-6 py-4 text-base font-semibold shadow-glow transition hover:scale-[1.02] hover:border-primary hover:bg-accent/30 disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <GIcon />}
+          Continue with Google
+        </button>
+
+        <p className="mt-4 text-xs text-muted-foreground">
+          Prefer email?{" "}
+          <button onClick={() => navigate({ to: "/auth" })} className="font-semibold text-primary hover:underline">
+            Sign in with email
+          </button>
+        </p>
+
+        <div className="mt-8 grid gap-3 text-left sm:grid-cols-3">
+          {[
+            { icon: Upload, t: "Upload PDFs", d: "Drop assignments and notes" },
+            { icon: Wand2, t: "AI quizzes", d: "Auto-generate 5 MCQs" },
+            { icon: BarChart3, t: "Track progress", d: "See student XP & streaks" },
+          ].map((f, i) => (
+            <div key={i} className="rounded-2xl border bg-card/60 p-4">
+              <f.icon className="h-4 w-4 text-primary" />
+              <div className="mt-2 text-sm font-semibold">{f.t}</div>
+              <div className="text-xs text-muted-foreground">{f.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.56c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.76c-.99.66-2.25 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.11A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.11V7.05H2.18A11 11 0 0 0 1 12c0 1.77.43 3.45 1.18 4.95l3.66-2.84z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.05l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" />
+    </svg>
+  );
+}
 
 type Profile = { id: string; full_name: string | null; xp: number; streak: number };
 type Material = { id: string; title: string; subject: string; description: string | null; created_at: string };
