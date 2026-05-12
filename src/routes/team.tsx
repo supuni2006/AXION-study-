@@ -45,31 +45,7 @@ const team: Member[] = [
     bio: "Designs every pixel students see. Believes great UX is invisible until it's missing.",
     initials: "LO",
     hue: "from-amber-400 to-orange-500",
-    socials: [{ icon: Twitter, href: "#" }],
-  },
-  {
-    name: "Mateo Rossi",
-    role: "Curriculum Lead",
-    bio: "PhD in education research. Curates question banks across 40+ subjects.",
-    initials: "MR",
-    hue: "from-emerald-500 to-teal-400",
-    socials: [{ icon: Linkedin, href: "#" }],
-  },
-  {
-    name: "Yuki Tanaka",
-    role: "Senior Engineer",
-    bio: "Keeps everything fast. Loves edge functions, dark themes, and obscure keyboard shortcuts.",
-    initials: "YT",
-    hue: "from-rose-500 to-pink-500",
-    socials: [{ icon: Github, href: "#" }, { icon: Twitter, href: "#" }],
-  },
-  {
-    name: "Sara Lindberg",
-    role: "Community & Schools",
-    bio: "Onboards teachers and schools. Always answering DMs at midnight.",
-    initials: "SL",
-    hue: "from-indigo-500 to-blue-500",
-    socials: [{ icon: Mail, href: "mailto:hello@axion.app" }, { icon: Linkedin, href: "#" }],
+    socials: [{ icon: Twitter, href: "#" }, { icon: Mail, href: "mailto:hello@axion.app" }],
   },
 ];
 
