@@ -574,7 +574,7 @@ function Admin() {
   );
 }
 
-type TeamMember = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null; sort_order: number };
+type TeamMember = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null; sort_order: number; github_url: string | null; linkedin_url: string | null; email: string | null };
 
 function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string | null }) {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -582,9 +582,14 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [bio, setBio] = useState("");
+  const [github, setGithub] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [email, setEmail] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{ github_url: string; linkedin_url: string; email: string }>({ github_url: "", linkedin_url: "", email: "" });
 
   async function load() {
     setLoading(true);
