@@ -1,10 +1,5 @@
 {
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "vite.config.ts",
-    "eslint.config.js"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "eslint.config.js"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
@@ -18,21 +13,15 @@
     "verbatimModuleSyntax": false,
     "noEmit": true,
 
-    /* Strictness (recommended for apps) */
-    "strict": true,
+    /* Linting */
     "skipLibCheck": true,
-
+    "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-
-    /* ⚠️ IMPORTANT: remove this (can break tooling) */
-    // "noUncheckedSideEffectImports": true,
-
-    /* Path alias */
-    "baseUrl": ".",
+    "noUncheckedSideEffectImports": true,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   }
 }
