@@ -567,6 +567,196 @@ function Admin() {
           </form>
         </div>
       </div>
+
+      <TeamManager isTeacher={isTeacher} userId={user?.id ?? null} />
+    </div>
+  );
+}
+
+type TeamMember = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null; sort_order: number };
+
+function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string | null }) {
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("team_members")
+      .select("id, name, role, bio, avatar_url, sort_order")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    setMembers(data ?? []);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function uploadAvatar(file: File): Promise<string | null> {
+    if (!userId) return null;
+    const ext = file.name.split(".").pop() || "png";
+    const path = `${userId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+    if (error) { toast.error(error.message); return null; }
+    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async function addMember(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !role.trim()) { toast.error("Name and role required"); return; }
+    if (!userId) return;
+    setSaving(true);
+    try {
+      let avatar_url: string | null = null;
+      if (avatarFile) avatar_url = await uploadAvatar(avatarFile);
+      const { error } = await supabase.from("team_members").insert({
+        name: name.slice(0, 80),
+        role: role.slice(0, 80),
+        bio: bio.slice(0, 400) || null,
+        avatar_url,
+        sort_order: members.length,
+        created_by: userId,
+      });
+      if (error) throw error;
+      toast.success(`Added ${name}`);
+      setName(""); setRole(""); setBio(""); setAvatarFile(null);
+      load();
+    } catch (err: any) {
+      toast.error(err.message || "Couldn't add member");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function replaceAvatar(m: TeamMember, file: File) {
+    setUploadingId(m.id);
+    try {
+      const url = await uploadAvatar(file);
+      if (!url) return;
+      const { error } = await supabase.from("team_members").update({ avatar_url: url }).eq("id", m.id);
+      if (error) throw error;
+      toast.success("Avatar updated");
+      load();
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploadingId(null);
+    }
+  }
+
+  async function removeAvatar(m: TeamMember) {
+    const { error } = await supabase.from("team_members").update({ avatar_url: null }).eq("id", m.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Avatar removed");
+    load();
+  }
+
+  async function deleteMember(m: TeamMember) {
+    if (!confirm(`Remove ${m.name}?`)) return;
+    const { error } = await supabase.from("team_members").delete().eq("id", m.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Removed");
+    load();
+  }
+
+  return (
+    <div className="glass rounded-3xl p-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Users className="h-4 w-4 text-primary" /> Team members
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage who appears on the public <Link to="/team" className="text-primary hover:underline">/team</Link> page. Upload avatar photos here.
+          </p>
+        </div>
+      </div>
+
+      {isTeacher && (
+        <form onSubmit={addMember} className="mt-5 grid gap-3 rounded-2xl border bg-card/40 p-4 md:grid-cols-[auto,1fr,1fr]">
+          <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-card/70 text-center text-xs hover:border-primary/50">
+            {avatarFile ? (
+              <img src={URL.createObjectURL(avatarFile)} alt="preview" className="h-full w-full rounded-2xl object-cover" />
+            ) : (
+              <>
+                <Upload className="h-4 w-4 text-muted-foreground" />
+                <span className="mt-1 text-muted-foreground">Photo</span>
+              </>
+            )}
+            <input type="file" accept="image/*" className="hidden"
+              onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)} />
+          </label>
+          <div className="space-y-2">
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" maxLength={80}
+              className="w-full rounded-xl border bg-card/70 px-3 py-2 text-sm outline-none focus:border-primary" />
+            <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role (e.g. Founder)" maxLength={80}
+              className="w-full rounded-xl border bg-card/70 px-3 py-2 text-sm outline-none focus:border-primary" />
+          </div>
+          <div className="space-y-2">
+            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} placeholder="Short bio" maxLength={400}
+              className="w-full rounded-xl border bg-card/70 px-3 py-2 text-sm outline-none focus:border-primary" />
+            <button type="submit" disabled={saving}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary py-2 text-sm font-semibold text-primary-foreground shadow-glow disabled:opacity-50">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Add member
+            </button>
+          </div>
+        </form>
+      )}
+      {!isTeacher && <p className="mt-4 text-xs text-muted-foreground">Need teacher role to manage team members.</p>}
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {!loading && members.length === 0 && <p className="text-sm text-muted-foreground">No team members yet.</p>}
+        {members.map((m) => (
+          <div key={m.id} className="flex gap-3 rounded-2xl border bg-card/60 p-3">
+            <div className="relative">
+              {m.avatar_url ? (
+                <img src={m.avatar_url} alt={m.name} className="h-16 w-16 rounded-xl object-cover" />
+              ) : (
+                <div className="grid h-16 w-16 place-items-center rounded-xl bg-hero text-sm font-bold text-primary-foreground">
+                  {m.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+                </div>
+              )}
+              {uploadingId === m.id && (
+                <div className="absolute inset-0 grid place-items-center rounded-xl bg-black/40">
+                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{m.name}</p>
+              <p className="truncate text-xs text-primary">{m.role}</p>
+              {m.bio && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{m.bio}</p>}
+              {isTeacher && (
+                <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+                  <label className="inline-flex cursor-pointer items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-primary/40">
+                    <Upload className="h-3 w-3" /> {m.avatar_url ? "Replace" : "Upload"}
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) replaceAvatar(m, f); }} />
+                  </label>
+                  {m.avatar_url && (
+                    <button onClick={() => removeAvatar(m)}
+                      className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-rose-400/50 hover:text-rose-500">
+                      <X className="h-3 w-3" /> Photo
+                    </button>
+                  )}
+                  <button onClick={() => deleteMember(m)}
+                    className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-rose-400/50 hover:text-rose-500">
+                    <Trash2 className="h-3 w-3" /> Remove
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
