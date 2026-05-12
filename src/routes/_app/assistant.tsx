@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Send, Sparkles, User, Loader2, MessageCircle, Brain, Wand2, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/assistant")({
+  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s.q === "string" ? s.q : undefined }),
   head: () => ({ meta: [{ title: "AI Assistant — AXION" }] }),
   component: Assistant,
 });
