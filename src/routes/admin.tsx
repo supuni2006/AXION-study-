@@ -628,10 +628,14 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
         avatar_url,
         sort_order: members.length,
         created_by: userId,
+        github_url: github.trim() || null,
+        linkedin_url: linkedin.trim() || null,
+        email: email.trim() || null,
       });
       if (error) throw error;
       toast.success(`Added ${name}`);
       setName(""); setRole(""); setBio(""); setAvatarFile(null);
+      setGithub(""); setLinkedin(""); setEmail("");
       load();
     } catch (err: any) {
       toast.error(err.message || "Couldn't add member");
