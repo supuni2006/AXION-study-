@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Users, Upload, FilePlus2, BarChart3, Search, Lock, Wand2, Loader2,
-  CheckCircle2, XCircle, FileText, Sparkles, GraduationCap, Pencil, RefreshCw, Check, X,
+  CheckCircle2, XCircle, FileText, Sparkles, GraduationCap, Pencil, RefreshCw, Check, X, Plus, Trash2,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
