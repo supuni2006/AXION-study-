@@ -675,6 +675,27 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
     load();
   }
 
+  function startEdit(m: TeamMember) {
+    setEditingId(m.id);
+    setEditDraft({
+      github_url: m.github_url ?? "",
+      linkedin_url: m.linkedin_url ?? "",
+      email: m.email ?? "",
+    });
+  }
+
+  async function saveSocials(m: TeamMember) {
+    const { error } = await supabase.from("team_members").update({
+      github_url: editDraft.github_url.trim() || null,
+      linkedin_url: editDraft.linkedin_url.trim() || null,
+      email: editDraft.email.trim() || null,
+    }).eq("id", m.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Links saved");
+    setEditingId(null);
+    load();
+  }
+
   return (
     <div className="glass rounded-3xl p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
