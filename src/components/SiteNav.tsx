@@ -4,10 +4,10 @@ import { useAuth } from "@/hooks/use-auth";
 
 const links = [
   { to: "/", label: "Home" },
-  { to: "/_app/dashboard", label: "Dashboard" },
-  { to: "/_app/assistant", label: "AI Assistant" },
-  { to: "/_app/quizzes", label: "Quizzes" },
-  { to: "/_app/admin", label: "Teacher" },
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/assistant", label: "AI Assistant" },
+  { to: "/quizzes", label: "Quizzes" },
+  { to: "/admin", label: "Teacher" },
 ] as const;
 
 export function SiteNav() {

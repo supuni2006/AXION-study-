@@ -149,7 +149,7 @@ function Assistant() {
           </div>
         </div>
 
-        <Link to="/_app/admin"
+        <Link to="/admin"
           className="flex items-center gap-2 rounded-2xl border bg-card/60 p-3 text-sm hover:border-primary/40 hover:bg-primary/5">
           <FileText className="h-4 w-4 text-primary" />
           <span>Upload PDF → AI quiz</span>

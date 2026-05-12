@@ -177,7 +177,7 @@ function Admin() {
             )}
           </p>
         </div>
-        <Link to="/_app/assistant" className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-4 py-2 text-sm font-medium hover:bg-accent/40">
+        <Link to="/assistant" className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-4 py-2 text-sm font-medium hover:bg-accent/40">
           <Sparkles className="h-4 w-4 text-primary" /> Open AI Teachers
         </Link>
       </div>

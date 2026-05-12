@@ -42,10 +42,10 @@ export function SiteFooter() {
           <div>
             <h4 className="text-sm font-semibold">Product</h4>
             <ul className="mt-3 space-y-2 text-sm">
-              <li><Link to="/_app/dashboard" className="text-muted-foreground hover:text-foreground">Dashboard</Link></li>
-              <li><Link to="/_app/quizzes" className="text-muted-foreground hover:text-foreground">Quizzes</Link></li>
-              <li><Link to="/_app/assistant" className="text-muted-foreground hover:text-foreground">AI Teachers</Link></li>
-              <li><Link to="/_app/admin" className="text-muted-foreground hover:text-foreground">Teacher panel</Link></li>
+              <li><Link to="/dashboard" className="text-muted-foreground hover:text-foreground">Dashboard</Link></li>
+              <li><Link to="/quizzes" className="text-muted-foreground hover:text-foreground">Quizzes</Link></li>
+              <li><Link to="/assistant" className="text-muted-foreground hover:text-foreground">AI Teachers</Link></li>
+              <li><Link to="/admin" className="text-muted-foreground hover:text-foreground">Teacher panel</Link></li>
             </ul>
           </div>
 
