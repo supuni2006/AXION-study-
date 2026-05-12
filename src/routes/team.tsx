@@ -38,7 +38,7 @@ function TeamPage() {
     (async () => {
       const { data } = await supabase
         .from("team_members")
-        .select("id, name, role, bio, avatar_url")
+        .select("id, name, role, bio, avatar_url, github_url, linkedin_url, email")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
       setMembers(data ?? []);
