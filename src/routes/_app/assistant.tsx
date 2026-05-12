@@ -26,6 +26,7 @@ const suggestions = [
 ];
 
 function Assistant() {
+  const { q } = Route.useSearch();
   const [persona, setPersona] = useState<Persona>("chatgpt");
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: "Hi! Pick a teacher on the left, then ask anything — concepts, summaries, or practice quizzes." },
@@ -33,6 +34,7 @@ function Assistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const sentRef = useRef<string | null>(null);
 
   async function send(text: string) {
     if (!text.trim() || loading) return;
