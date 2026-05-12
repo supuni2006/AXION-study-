@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Users, Upload, FilePlus2, BarChart3, Search, Lock, Wand2, Loader2,
-  CheckCircle2, XCircle, FileText, Sparkles, GraduationCap,
+  CheckCircle2, XCircle, FileText, Sparkles, GraduationCap, Pencil, RefreshCw, Check, X,
 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/use-auth";
