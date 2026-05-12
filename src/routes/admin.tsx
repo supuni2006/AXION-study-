@@ -738,6 +738,23 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
               Add member
             </button>
           </div>
+          <div className="grid gap-2 md:col-span-3 md:grid-cols-3">
+            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
+              <Github className="h-4 w-4 text-muted-foreground" />
+              <input value={github} onChange={(e) => setGithub(e.target.value)} placeholder="GitHub URL"
+                className="w-full bg-transparent py-2 text-sm outline-none" />
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
+              <Linkedin className="h-4 w-4 text-muted-foreground" />
+              <input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="LinkedIn URL"
+                className="w-full bg-transparent py-2 text-sm outline-none" />
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
+                className="w-full bg-transparent py-2 text-sm outline-none" />
+            </div>
+          </div>
         </form>
       )}
       {!isTeacher && <p className="mt-4 text-xs text-muted-foreground">Need teacher role to manage team members.</p>}
