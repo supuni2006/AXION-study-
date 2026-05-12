@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { z } from "zod";
 
-export const Route = createFileRoute("/_app/admin")({
+export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Teacher Panel — AXION" }] }),
   component: Admin,
 });
