@@ -149,14 +149,21 @@ function Admin() {
   const [questions, setQuestions] = useState<GenQ[] | null>(null);
   const [picked, setPicked] = useState<Record<number, number>>({});
 
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [libFilter, setLibFilter] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
   async function load() {
     setLoading(true);
-    const [{ data: profs }, { data: mats }] = await Promise.all([
+    const [{ data: profs }, { data: mats }, { data: atts }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, xp, streak").order("xp", { ascending: false }).limit(50),
-      supabase.from("materials").select("id, title, subject, description, created_at").order("created_at", { ascending: false }).limit(50),
+      supabase.from("materials").select("id, title, subject, description, created_at, storage_path").order("created_at", { ascending: false }).limit(100),
+      supabase.from("quiz_attempts").select("user_id, score, total, topic").limit(500),
     ]);
     setStudents(profs ?? []);
     setMaterials(mats ?? []);
+    setAttempts(atts ?? []);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
