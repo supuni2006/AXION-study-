@@ -119,7 +119,10 @@ export type Database = {
           bio: string | null
           created_at: string
           created_by: string | null
+          email: string | null
+          github_url: string | null
           id: string
+          linkedin_url: string | null
           name: string
           role: string
           sort_order: number
@@ -130,7 +133,10 @@ export type Database = {
           bio?: string | null
           created_at?: string
           created_by?: string | null
+          email?: string | null
+          github_url?: string | null
           id?: string
+          linkedin_url?: string | null
           name: string
           role: string
           sort_order?: number
@@ -141,7 +147,10 @@ export type Database = {
           bio?: string | null
           created_at?: string
           created_by?: string | null
+          email?: string | null
+          github_url?: string | null
           id?: string
+          linkedin_url?: string | null
           name?: string
           role?: string
           sort_order?: number

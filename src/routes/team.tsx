@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Sparkles, Users } from "lucide-react";
+import { Sparkles, Users, Github, Linkedin, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/team")({
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/team")({
   component: TeamPage,
 });
 
-type Member = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null };
+type Member = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null; github_url: string | null; linkedin_url: string | null; email: string | null };
 
 const HUES = [
   "from-violet-500 to-fuchsia-500",
@@ -38,7 +38,7 @@ function TeamPage() {
     (async () => {
       const { data } = await supabase
         .from("team_members")
-        .select("id, name, role, bio, avatar_url")
+        .select("id, name, role, bio, avatar_url, github_url, linkedin_url, email")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
       setMembers(data ?? []);
@@ -86,6 +86,28 @@ function TeamPage() {
                 <h2 className="mt-4 text-lg font-semibold">{m.name}</h2>
                 <p className="text-xs font-medium uppercase tracking-wider text-primary">{m.role}</p>
                 {m.bio && <p className="mt-2 text-sm text-muted-foreground">{m.bio}</p>}
+                {(m.github_url || m.linkedin_url || m.email) && (
+                  <div className="mt-4 flex items-center gap-2">
+                    {m.github_url && (
+                      <a href={m.github_url} target="_blank" rel="noreferrer" aria-label={`${m.name} on GitHub`}
+                        className="grid h-8 w-8 place-items-center rounded-full border bg-card/70 text-muted-foreground transition hover:border-primary/50 hover:text-primary">
+                        <Github className="h-4 w-4" />
+                      </a>
+                    )}
+                    {m.linkedin_url && (
+                      <a href={m.linkedin_url} target="_blank" rel="noreferrer" aria-label={`${m.name} on LinkedIn`}
+                        className="grid h-8 w-8 place-items-center rounded-full border bg-card/70 text-muted-foreground transition hover:border-primary/50 hover:text-primary">
+                        <Linkedin className="h-4 w-4" />
+                      </a>
+                    )}
+                    {m.email && (
+                      <a href={`mailto:${m.email}`} aria-label={`Email ${m.name}`}
+                        className="grid h-8 w-8 place-items-center rounded-full border bg-card/70 text-muted-foreground transition hover:border-primary/50 hover:text-primary">
+                        <Mail className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>

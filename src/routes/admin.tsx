@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Users, Upload, FilePlus2, BarChart3, Search, Lock, Wand2, Loader2,
   CheckCircle2, XCircle, FileText, Sparkles, GraduationCap, Pencil, RefreshCw, Check, X, Plus, Trash2,
+  Github, Linkedin, Mail,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -573,7 +574,7 @@ function Admin() {
   );
 }
 
-type TeamMember = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null; sort_order: number };
+type TeamMember = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null; sort_order: number; github_url: string | null; linkedin_url: string | null; email: string | null };
 
 function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string | null }) {
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -581,15 +582,20 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [bio, setBio] = useState("");
+  const [github, setGithub] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [email, setEmail] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{ github_url: string; linkedin_url: string; email: string }>({ github_url: "", linkedin_url: "", email: "" });
 
   async function load() {
     setLoading(true);
     const { data } = await supabase
       .from("team_members")
-      .select("id, name, role, bio, avatar_url, sort_order")
+      .select("id, name, role, bio, avatar_url, sort_order, github_url, linkedin_url, email")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
     setMembers(data ?? []);
@@ -622,10 +628,14 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
         avatar_url,
         sort_order: members.length,
         created_by: userId,
+        github_url: github.trim() || null,
+        linkedin_url: linkedin.trim() || null,
+        email: email.trim() || null,
       });
       if (error) throw error;
       toast.success(`Added ${name}`);
       setName(""); setRole(""); setBio(""); setAvatarFile(null);
+      setGithub(""); setLinkedin(""); setEmail("");
       load();
     } catch (err: any) {
       toast.error(err.message || "Couldn't add member");
@@ -662,6 +672,27 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
     const { error } = await supabase.from("team_members").delete().eq("id", m.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Removed");
+    load();
+  }
+
+  function startEdit(m: TeamMember) {
+    setEditingId(m.id);
+    setEditDraft({
+      github_url: m.github_url ?? "",
+      linkedin_url: m.linkedin_url ?? "",
+      email: m.email ?? "",
+    });
+  }
+
+  async function saveSocials(m: TeamMember) {
+    const { error } = await supabase.from("team_members").update({
+      github_url: editDraft.github_url.trim() || null,
+      linkedin_url: editDraft.linkedin_url.trim() || null,
+      email: editDraft.email.trim() || null,
+    }).eq("id", m.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Links saved");
+    setEditingId(null);
     load();
   }
 
@@ -707,6 +738,23 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
               Add member
             </button>
           </div>
+          <div className="grid gap-2 md:col-span-3 md:grid-cols-3">
+            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
+              <Github className="h-4 w-4 text-muted-foreground" />
+              <input value={github} onChange={(e) => setGithub(e.target.value)} placeholder="GitHub URL"
+                className="w-full bg-transparent py-2 text-sm outline-none" />
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
+              <Linkedin className="h-4 w-4 text-muted-foreground" />
+              <input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="LinkedIn URL"
+                className="w-full bg-transparent py-2 text-sm outline-none" />
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
+                className="w-full bg-transparent py-2 text-sm outline-none" />
+            </div>
+          </div>
         </form>
       )}
       {!isTeacher && <p className="mt-4 text-xs text-muted-foreground">Need teacher role to manage team members.</p>}
@@ -734,6 +782,31 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
               <p className="truncate text-sm font-semibold">{m.name}</p>
               <p className="truncate text-xs text-primary">{m.role}</p>
               {m.bio && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{m.bio}</p>}
+              <div className="mt-2 flex items-center gap-2 text-muted-foreground">
+                {m.github_url && <a href={m.github_url} target="_blank" rel="noreferrer" className="hover:text-primary"><Github className="h-3.5 w-3.5" /></a>}
+                {m.linkedin_url && <a href={m.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-primary"><Linkedin className="h-3.5 w-3.5" /></a>}
+                {m.email && <a href={`mailto:${m.email}`} className="hover:text-primary"><Mail className="h-3.5 w-3.5" /></a>}
+              </div>
+              {isTeacher && editingId === m.id && (
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
+                    <Github className="h-3 w-3 text-muted-foreground" />
+                    <input value={editDraft.github_url} onChange={(e) => setEditDraft((d) => ({ ...d, github_url: e.target.value }))} placeholder="GitHub URL" className="w-full bg-transparent py-1 text-xs outline-none" />
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
+                    <Linkedin className="h-3 w-3 text-muted-foreground" />
+                    <input value={editDraft.linkedin_url} onChange={(e) => setEditDraft((d) => ({ ...d, linkedin_url: e.target.value }))} placeholder="LinkedIn URL" className="w-full bg-transparent py-1 text-xs outline-none" />
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
+                    <Mail className="h-3 w-3 text-muted-foreground" />
+                    <input value={editDraft.email} onChange={(e) => setEditDraft((d) => ({ ...d, email: e.target.value }))} placeholder="Email" className="w-full bg-transparent py-1 text-xs outline-none" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => saveSocials(m)} className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Save</button>
+                    <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 text-xs"><X className="h-3 w-3" /> Cancel</button>
+                  </div>
+                </div>
+              )}
               {isTeacher && (
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
                   <label className="inline-flex cursor-pointer items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-primary/40">
@@ -745,6 +818,12 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
                     <button onClick={() => removeAvatar(m)}
                       className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-rose-400/50 hover:text-rose-500">
                       <X className="h-3 w-3" /> Photo
+                    </button>
+                  )}
+                  {editingId !== m.id && (
+                    <button onClick={() => startEdit(m)}
+                      className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-primary/40">
+                      <Pencil className="h-3 w-3" /> Links
                     </button>
                   )}
                   <button onClick={() => deleteMember(m)}
