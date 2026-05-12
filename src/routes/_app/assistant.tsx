@@ -108,6 +108,14 @@ function Assistant() {
     }
   }
 
+  useEffect(() => {
+    if (q && sentRef.current !== q) {
+      sentRef.current = q;
+      send(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
+
   const active = TEACHERS.find((t) => t.id === persona)!;
 
   return (
