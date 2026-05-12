@@ -165,6 +165,9 @@ function Quizzes() {
             <button onClick={reset} className="rounded-full border bg-card/70 px-6 py-3 text-sm font-semibold hover:bg-accent/40">
               Change difficulty
             </button>
+            <Link to="/dashboard" className="rounded-full border bg-card/70 px-6 py-3 text-sm font-semibold hover:bg-accent/40">
+              Back to dashboard
+            </Link>
           </div>
         </div>
       </div>
