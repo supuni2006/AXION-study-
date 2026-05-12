@@ -86,6 +86,28 @@ function TeamPage() {
                 <h2 className="mt-4 text-lg font-semibold">{m.name}</h2>
                 <p className="text-xs font-medium uppercase tracking-wider text-primary">{m.role}</p>
                 {m.bio && <p className="mt-2 text-sm text-muted-foreground">{m.bio}</p>}
+                {(m.github_url || m.linkedin_url || m.email) && (
+                  <div className="mt-4 flex items-center gap-2">
+                    {m.github_url && (
+                      <a href={m.github_url} target="_blank" rel="noreferrer" aria-label={`${m.name} on GitHub`}
+                        className="grid h-8 w-8 place-items-center rounded-full border bg-card/70 text-muted-foreground transition hover:border-primary/50 hover:text-primary">
+                        <Github className="h-4 w-4" />
+                      </a>
+                    )}
+                    {m.linkedin_url && (
+                      <a href={m.linkedin_url} target="_blank" rel="noreferrer" aria-label={`${m.name} on LinkedIn`}
+                        className="grid h-8 w-8 place-items-center rounded-full border bg-card/70 text-muted-foreground transition hover:border-primary/50 hover:text-primary">
+                        <Linkedin className="h-4 w-4" />
+                      </a>
+                    )}
+                    {m.email && (
+                      <a href={`mailto:${m.email}`} aria-label={`Email ${m.name}`}
+                        className="grid h-8 w-8 place-items-center rounded-full border bg-card/70 text-muted-foreground transition hover:border-primary/50 hover:text-primary">
+                        <Mail className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>
