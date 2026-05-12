@@ -32,9 +32,9 @@ function AuthPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
 
-  if (session) {
-    navigate({ to: "/dashboard" });
-  }
+  useEffect(() => {
+    if (session) navigate({ to: "/dashboard" });
+  }, [session, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
