@@ -782,6 +782,31 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
               <p className="truncate text-sm font-semibold">{m.name}</p>
               <p className="truncate text-xs text-primary">{m.role}</p>
               {m.bio && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{m.bio}</p>}
+              <div className="mt-2 flex items-center gap-2 text-muted-foreground">
+                {m.github_url && <a href={m.github_url} target="_blank" rel="noreferrer" className="hover:text-primary"><Github className="h-3.5 w-3.5" /></a>}
+                {m.linkedin_url && <a href={m.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-primary"><Linkedin className="h-3.5 w-3.5" /></a>}
+                {m.email && <a href={`mailto:${m.email}`} className="hover:text-primary"><Mail className="h-3.5 w-3.5" /></a>}
+              </div>
+              {isTeacher && editingId === m.id && (
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
+                    <Github className="h-3 w-3 text-muted-foreground" />
+                    <input value={editDraft.github_url} onChange={(e) => setEditDraft((d) => ({ ...d, github_url: e.target.value }))} placeholder="GitHub URL" className="w-full bg-transparent py-1 text-xs outline-none" />
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
+                    <Linkedin className="h-3 w-3 text-muted-foreground" />
+                    <input value={editDraft.linkedin_url} onChange={(e) => setEditDraft((d) => ({ ...d, linkedin_url: e.target.value }))} placeholder="LinkedIn URL" className="w-full bg-transparent py-1 text-xs outline-none" />
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
+                    <Mail className="h-3 w-3 text-muted-foreground" />
+                    <input value={editDraft.email} onChange={(e) => setEditDraft((d) => ({ ...d, email: e.target.value }))} placeholder="Email" className="w-full bg-transparent py-1 text-xs outline-none" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button onClick={() => saveSocials(m)} className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Save</button>
+                    <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 text-xs"><X className="h-3 w-3" /> Cancel</button>
+                  </div>
+                </div>
+              )}
               {isTeacher && (
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
                   <label className="inline-flex cursor-pointer items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-primary/40">
@@ -793,6 +818,12 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
                     <button onClick={() => removeAvatar(m)}
                       className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-rose-400/50 hover:text-rose-500">
                       <X className="h-3 w-3" /> Photo
+                    </button>
+                  )}
+                  {editingId !== m.id && (
+                    <button onClick={() => startEdit(m)}
+                      className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-primary/40">
+                      <Pencil className="h-3 w-3" /> Links
                     </button>
                   )}
                   <button onClick={() => deleteMember(m)}
