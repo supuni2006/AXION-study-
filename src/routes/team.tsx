@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, Github, Twitter, Linkedin, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Sparkles, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
     meta: [
       { title: "Meet the team — AXION" },
-      { name: "description", content: "The educators, engineers, and researchers building AXION — your AI-powered learning companion." },
+      { name: "description", content: "The educators, engineers, and researchers building AXION." },
       { property: "og:title", content: "Meet the team — AXION" },
       { property: "og:description", content: "The educators, engineers, and researchers building AXION." },
     ],
@@ -13,43 +15,37 @@ export const Route = createFileRoute("/team")({
   component: TeamPage,
 });
 
-type Member = {
-  name: string;
-  role: string;
-  bio: string;
-  initials: string;
-  hue: string;
-  socials?: { icon: typeof Github; href: string }[];
-};
+type Member = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null };
 
-const team: Member[] = [
-  {
-    name: "Aria Mehta",
-    role: "Founder & CEO",
-    bio: "Former classroom teacher turned product lead. Obsessed with making learning feel like play.",
-    initials: "AM",
-    hue: "from-violet-500 to-fuchsia-500",
-    socials: [{ icon: Twitter, href: "#" }, { icon: Linkedin, href: "#" }],
-  },
-  {
-    name: "Dev Patel",
-    role: "Head of AI",
-    bio: "Builds the multi-model brain behind AXION's tutors. Loves Gemini, ChatGPT, and Claude equally.",
-    initials: "DP",
-    hue: "from-sky-500 to-cyan-400",
-    socials: [{ icon: Github, href: "#" }, { icon: Linkedin, href: "#" }],
-  },
-  {
-    name: "Lina Okafor",
-    role: "Lead Designer",
-    bio: "Designs every pixel students see. Believes great UX is invisible until it's missing.",
-    initials: "LO",
-    hue: "from-amber-400 to-orange-500",
-    socials: [{ icon: Twitter, href: "#" }, { icon: Mail, href: "mailto:hello@axion.app" }],
-  },
+const HUES = [
+  "from-violet-500 to-fuchsia-500",
+  "from-sky-500 to-cyan-400",
+  "from-amber-400 to-orange-500",
+  "from-emerald-500 to-teal-400",
+  "from-rose-500 to-pink-500",
+  "from-indigo-500 to-blue-500",
 ];
 
+function initials(name: string) {
+  return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+}
+
 function TeamPage() {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("team_members")
+        .select("id, name, role, bio, avatar_url")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      setMembers(data ?? []);
+      setLoading(false);
+    })();
+  }, []);
+
   return (
     <div className="space-y-10 pb-16">
       <section className="glass rounded-3xl p-8 text-center md:p-12">
@@ -66,30 +62,34 @@ function TeamPage() {
       </section>
 
       <section>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {team.map((m) => (
-            <article key={m.name} className="glass group rounded-3xl p-6 transition hover:-translate-y-1">
-              <div className={`grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br ${m.hue} text-xl font-bold text-white shadow-glow`}>
-                {m.initials}
-              </div>
-              <h2 className="mt-4 text-lg font-semibold">{m.name}</h2>
-              <p className="text-xs font-medium uppercase tracking-wider text-primary">{m.role}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{m.bio}</p>
-              {m.socials && (
-                <div className="mt-4 flex gap-2">
-                  {m.socials.map((s, i) => {
-                    const Icon = s.icon;
-                    return (
-                      <a key={i} href={s.href} className="grid h-8 w-8 place-items-center rounded-full border bg-card/70 text-muted-foreground transition hover:border-primary hover:text-primary">
-                        <Icon className="h-3.5 w-3.5" />
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
+        {loading ? (
+          <p className="text-center text-sm text-muted-foreground">Loading…</p>
+        ) : members.length === 0 ? (
+          <div className="glass rounded-3xl p-10 text-center">
+            <Users className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              No team members yet. Teachers can add them in the{" "}
+              <Link to="/admin" className="font-semibold text-primary hover:underline">Teacher panel</Link>.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {members.map((m, i) => (
+              <article key={m.id} className="glass group rounded-3xl p-6 transition hover:-translate-y-1">
+                {m.avatar_url ? (
+                  <img src={m.avatar_url} alt={m.name} className="h-20 w-20 rounded-2xl object-cover shadow-glow" />
+                ) : (
+                  <div className={`grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br ${HUES[i % HUES.length]} text-xl font-bold text-white shadow-glow`}>
+                    {initials(m.name)}
+                  </div>
+                )}
+                <h2 className="mt-4 text-lg font-semibold">{m.name}</h2>
+                <p className="text-xs font-medium uppercase tracking-wider text-primary">{m.role}</p>
+                {m.bio && <p className="mt-2 text-sm text-muted-foreground">{m.bio}</p>}
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="glass rounded-3xl p-8 text-center">
