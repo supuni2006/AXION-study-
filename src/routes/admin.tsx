@@ -595,7 +595,7 @@ function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string
     setLoading(true);
     const { data } = await supabase
       .from("team_members")
-      .select("id, name, role, bio, avatar_url, sort_order")
+      .select("id, name, role, bio, avatar_url, sort_order, github_url, linkedin_url, email")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
     setMembers(data ?? []);
