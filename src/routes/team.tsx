@@ -15,7 +15,7 @@ export const Route = createFileRoute("/team")({
   component: TeamPage,
 });
 
-type Member = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null };
+type Member = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null; github_url: string | null; linkedin_url: string | null; email: string | null };
 
 const HUES = [
   "from-violet-500 to-fuchsia-500",
