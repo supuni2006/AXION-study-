@@ -104,8 +104,9 @@ function GIcon() {
 }
 
 type Profile = { id: string; full_name: string | null; xp: number; streak: number };
-type Material = { id: string; title: string; subject: string; description: string | null; created_at: string };
+type Material = { id: string; title: string; subject: string; description: string | null; created_at: string; storage_path: string | null };
 type GenQ = { q: string; options: string[]; answer: number; explanation?: string };
+type Attempt = { user_id: string; score: number; total: number; topic: string };
 
 const matSchema = z.object({
   title: z.string().trim().min(1).max(120),
