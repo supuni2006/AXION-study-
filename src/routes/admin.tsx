@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Users, Upload, FilePlus2, BarChart3, Search, Lock, Wand2, Loader2,
-  CheckCircle2, XCircle, FileText, Sparkles, GraduationCap,
+  CheckCircle2, XCircle, FileText, Sparkles, GraduationCap, Pencil, RefreshCw, Check, X,
 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/use-auth";
@@ -104,8 +105,9 @@ function GIcon() {
 }
 
 type Profile = { id: string; full_name: string | null; xp: number; streak: number };
-type Material = { id: string; title: string; subject: string; description: string | null; created_at: string };
+type Material = { id: string; title: string; subject: string; description: string | null; created_at: string; storage_path: string | null };
 type GenQ = { q: string; options: string[]; answer: number; explanation?: string };
+type Attempt = { user_id: string; score: number; total: number; topic: string };
 
 const matSchema = z.object({
   title: z.string().trim().min(1).max(120),
@@ -148,14 +150,53 @@ function Admin() {
   const [questions, setQuestions] = useState<GenQ[] | null>(null);
   const [picked, setPicked] = useState<Record<number, number>>({});
 
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [libFilter, setLibFilter] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const generatorRef = useRef<HTMLDivElement | null>(null);
+
+  async function renameMaterial(id: string) {
+    const t = editingTitle.trim();
+    if (!t) { toast.error("Title can't be empty"); return; }
+    const { error } = await supabase.from("materials").update({ title: t.slice(0, 120) }).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setEditingId(null); setEditingTitle("");
+    toast.success("Renamed");
+    load();
+  }
+
+  async function reuseMaterial(m: Material) {
+    if (!m.storage_path) {
+      setPasted(`${m.title}\n${m.subject}\n${m.description ?? ""}`);
+      setTitle(m.title); setSubject(m.subject);
+      generatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      toast.message("Loaded metadata — paste or upload more text to enrich the quiz.");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.storage.from("materials").download(m.storage_path);
+      if (error || !data) throw error ?? new Error("download failed");
+      const f = new File([data], m.storage_path.split("/").pop() ?? "material.pdf", { type: data.type || "application/pdf" });
+      setFile(f);
+      setTitle(m.title); setSubject(m.subject);
+      generatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      toast.success(`Loaded "${m.title}" — click Generate to make a fresh quiz.`);
+    } catch (e: any) {
+      console.error(e); toast.error("Couldn't load file from library");
+    }
+  }
+
   async function load() {
     setLoading(true);
-    const [{ data: profs }, { data: mats }] = await Promise.all([
+    const [{ data: profs }, { data: mats }, { data: atts }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, xp, streak").order("xp", { ascending: false }).limit(50),
-      supabase.from("materials").select("id, title, subject, description, created_at").order("created_at", { ascending: false }).limit(50),
+      supabase.from("materials").select("id, title, subject, description, created_at, storage_path").order("created_at", { ascending: false }).limit(100),
+      supabase.from("quiz_attempts").select("user_id, score, total, topic").limit(500),
     ]);
     setStudents(profs ?? []);
     setMaterials(mats ?? []);
+    setAttempts(atts ?? []);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -254,6 +295,37 @@ function Admin() {
   }
 
   const visible = students.filter((s) => !filter || (s.full_name ?? "").toLowerCase().includes(filter.toLowerCase()));
+  const lib = materials.filter((m) =>
+    !libFilter ||
+    m.title.toLowerCase().includes(libFilter.toLowerCase()) ||
+    m.subject.toLowerCase().includes(libFilter.toLowerCase())
+  );
+
+  // Build per-student progress chart data (top 8 by XP), with quiz accuracy.
+  const progressData = useMemo(() => {
+    const byUser = new Map<string, { score: number; total: number }>();
+    for (const a of attempts) {
+      const cur = byUser.get(a.user_id) ?? { score: 0, total: 0 };
+      cur.score += a.score; cur.total += a.total;
+      byUser.set(a.user_id, cur);
+    }
+    return students.slice(0, 8).map((s) => {
+      const a = byUser.get(s.id);
+      const accuracy = a && a.total > 0 ? Math.round((a.score / a.total) * 100) : 0;
+      return {
+        name: (s.full_name ?? "Anon").split(" ")[0].slice(0, 10),
+        XP: s.xp,
+        Streak: s.streak,
+        Accuracy: accuracy,
+      };
+    });
+  }, [students, attempts]);
+
+  const classAvgAccuracy = useMemo(() => {
+    if (!attempts.length) return 0;
+    const t = attempts.reduce((acc, a) => ({ s: acc.s + a.score, t: acc.t + a.total }), { s: 0, t: 0 });
+    return t.t ? Math.round((t.s / t.t) * 100) : 0;
+  }, [attempts]);
 
   return (
     <div className="space-y-6 pb-10">
@@ -271,14 +343,44 @@ function Admin() {
         </Link>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-4">
         <Kpi icon={Users} label="Students" value={String(students.length)} />
         <Kpi icon={BarChart3} label="Top XP" value={students[0]?.xp?.toLocaleString() ?? "0"} />
+        <Kpi icon={CheckCircle2} label="Class accuracy" value={`${classAvgAccuracy}%`} />
         <Kpi icon={Upload} label="Materials" value={String(materials.length)} />
       </div>
 
-      {/* AI Question generator */}
+      {/* Class Progress Dashboard */}
       <div className="glass rounded-3xl p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <BarChart3 className="h-4 w-4 text-primary" /> Class progress
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">XP, streaks, and quiz accuracy for your top students.</p>
+          </div>
+        </div>
+        <div className="mt-4 h-72 w-full">
+          {progressData.length === 0 ? (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No student data yet.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={progressData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
+                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
+                <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 }} />
+                <Bar dataKey="XP" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Accuracy" fill="#34D399" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Streak" fill="#F59E0B" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* AI Question generator */}
+      <div ref={generatorRef} className="glass rounded-3xl p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold">
@@ -357,6 +459,66 @@ function Admin() {
         </div>
       </div>
 
+      {/* Assignment Library */}
+      <div className="glass rounded-3xl p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <FileText className="h-4 w-4 text-primary" /> Assignment library
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">Rename past uploads and reuse them to generate brand-new quizzes.</p>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input value={libFilter} onChange={(e) => setLibFilter(e.target.value)} placeholder="Search library…"
+              className="rounded-full border bg-card/70 py-2 pl-9 pr-4 text-sm outline-none focus:border-primary" />
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {lib.length === 0 && <p className="text-sm text-muted-foreground">No assignments yet — upload one above.</p>}
+          {lib.map((m) => (
+            <div key={m.id} className="rounded-2xl border bg-card/60 p-4">
+              <div className="flex items-start justify-between gap-2">
+                {editingId === m.id ? (
+                  <div className="flex-1">
+                    <input autoFocus value={editingTitle} onChange={(e) => setEditingTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") renameMaterial(m.id); if (e.key === "Escape") setEditingId(null); }}
+                      className="w-full rounded-lg border bg-background px-2 py-1 text-sm outline-none focus:border-primary" />
+                  </div>
+                ) : (
+                  <h3 className="line-clamp-2 text-sm font-semibold">{m.title}</h3>
+                )}
+                {editingId === m.id ? (
+                  <div className="flex gap-1">
+                    <button onClick={() => renameMaterial(m.id)} className="rounded-md p-1 hover:bg-emerald-500/10" title="Save">
+                      <Check className="h-4 w-4 text-emerald-500" />
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="rounded-md p-1 hover:bg-rose-500/10" title="Cancel">
+                      <X className="h-4 w-4 text-rose-500" />
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => { setEditingId(m.id); setEditingTitle(m.title); }} className="rounded-md p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary" title="Rename">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">{m.subject}</span>
+                <span>{new Date(m.created_at).toLocaleDateString()}</span>
+                {m.storage_path && <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" /> file</span>}
+              </div>
+              {m.description && <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{m.description}</p>}
+              <button onClick={() => reuseMaterial(m)}
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10">
+                <RefreshCw className="h-3.5 w-3.5" /> Make new quiz
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="glass rounded-3xl p-6 lg:col-span-2">
           <div className="flex items-center justify-between gap-3">
@@ -403,17 +565,6 @@ function Admin() {
             </button>
             {!isTeacher && <p className="text-xs text-muted-foreground">Need teacher role? Ask an admin to grant access in the backend.</p>}
           </form>
-
-          <h3 className="mt-6 text-sm font-semibold">Recent materials</h3>
-          <ul className="mt-3 space-y-2">
-            {materials.length === 0 && <li className="text-xs text-muted-foreground">None yet.</li>}
-            {materials.slice(0, 5).map((m) => (
-              <li key={m.id} className="rounded-xl border bg-card/60 px-3 py-2 text-sm">
-                <div className="font-medium">{m.title}</div>
-                <div className="text-xs text-muted-foreground">{m.subject}</div>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
     </div>

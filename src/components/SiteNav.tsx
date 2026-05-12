@@ -8,6 +8,7 @@ const links = [
   { to: "/assistant", label: "AI Assistant" },
   { to: "/quizzes", label: "Quizzes" },
   { to: "/admin", label: "Teacher" },
+  { to: "/team", label: "Team" },
 ] as const;
 
 export function SiteNav() {
