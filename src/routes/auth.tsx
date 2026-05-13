@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { logOAuthFailure } from "@/lib/auth-logging.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { Sparkles, Mail, Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
