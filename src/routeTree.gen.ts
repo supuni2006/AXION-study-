@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TeamRouteImport } from './routes/team'
+import { Route as OauthLogsRouteImport } from './routes/oauth-logs'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
@@ -21,6 +22,11 @@ import { Route as AppAssistantRouteImport } from './routes/_app/assistant'
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthLogsRoute = OauthLogsRouteImport.update({
+  id: '/oauth-logs',
+  path: '/oauth-logs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -62,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/oauth-logs': typeof OauthLogsRoute
   '/team': typeof TeamRoute
   '/assistant': typeof AppAssistantRoute
   '/dashboard': typeof AppDashboardRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/oauth-logs': typeof OauthLogsRoute
   '/team': typeof TeamRoute
   '/assistant': typeof AppAssistantRoute
   '/dashboard': typeof AppDashboardRoute
@@ -82,6 +90,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/oauth-logs': typeof OauthLogsRoute
   '/team': typeof TeamRoute
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -93,6 +102,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/oauth-logs'
     | '/team'
     | '/assistant'
     | '/dashboard'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/oauth-logs'
     | '/team'
     | '/assistant'
     | '/dashboard'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/admin'
     | '/auth'
+    | '/oauth-logs'
     | '/team'
     | '/_app/assistant'
     | '/_app/dashboard'
@@ -123,6 +135,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  OauthLogsRoute: typeof OauthLogsRoute
   TeamRoute: typeof TeamRoute
 }
 
@@ -133,6 +146,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth-logs': {
+      id: '/oauth-logs'
+      path: '/oauth-logs'
+      fullPath: '/oauth-logs'
+      preLoaderRoute: typeof OauthLogsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -206,18 +226,9 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  OauthLogsRoute: OauthLogsRoute,
   TeamRoute: TeamRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
