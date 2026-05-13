@@ -37,6 +37,24 @@ function AuthPage() {
     if (session) navigate({ to: "/dashboard" });
   }, [session, navigate]);
 
+  // Capture OAuth errors returned via querystring (?error=...&error_description=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : "");
+    const errorCode = url.searchParams.get("error") ?? hashParams.get("error");
+    const errorDesc = url.searchParams.get("error_description") ?? hashParams.get("error_description");
+    if (!errorCode && !errorDesc) return;
+    logOAuthFailure({ data: {
+      provider: "google",
+      stage: "callback",
+      errorCode,
+      errorMessage: errorDesc,
+      url: window.location.href,
+    }}).catch(() => {});
+    toast.error(errorDesc || `Google sign-in failed (${errorCode})`);
+  }, []);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = schema.safeParse({ email, password, fullName: mode === "signup" ? fullName : undefined });
