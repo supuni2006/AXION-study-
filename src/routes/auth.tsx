@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { logOAuthFailure } from "@/lib/auth-logging.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { Sparkles, Mail, Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +36,24 @@ function AuthPage() {
   useEffect(() => {
     if (session) navigate({ to: "/dashboard" });
   }, [session, navigate]);
+
+  // Capture OAuth errors returned via querystring (?error=...&error_description=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : "");
+    const errorCode = url.searchParams.get("error") ?? hashParams.get("error");
+    const errorDesc = url.searchParams.get("error_description") ?? hashParams.get("error_description");
+    if (!errorCode && !errorDesc) return;
+    logOAuthFailure({ data: {
+      provider: "google",
+      stage: "callback",
+      errorCode,
+      errorMessage: errorDesc,
+      url: window.location.href,
+    }}).catch(() => {});
+    toast.error(errorDesc || `Google sign-in failed (${errorCode})`);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,16 +89,37 @@ function AuthPage() {
 
   async function google() {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/dashboard`,
-    });
-    if (result.error) {
+    const redirectUri = `${window.location.origin}/dashboard`;
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
+      if (result.error) {
+        const err = result.error as any;
+        await logOAuthFailure({ data: {
+          provider: "google",
+          stage: "initiate",
+          errorCode: err?.code ?? err?.name ?? null,
+          errorMessage: err?.message ?? String(err ?? "unknown"),
+          redirectUri,
+          url: window.location.href,
+        }}).catch(() => {});
+        toast.error("Google sign-in failed");
+        setLoading(false);
+        return;
+      }
+      if (result.redirected) return;
+      navigate({ to: "/dashboard" });
+    } catch (e: any) {
+      await logOAuthFailure({ data: {
+        provider: "google",
+        stage: "initiate",
+        errorCode: e?.code ?? e?.name ?? null,
+        errorMessage: e?.message ?? String(e ?? "unknown"),
+        redirectUri,
+        url: window.location.href,
+      }}).catch(() => {});
       toast.error("Google sign-in failed");
       setLoading(false);
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
   }
 
   return (
