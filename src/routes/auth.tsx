@@ -71,16 +71,37 @@ function AuthPage() {
 
   async function google() {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/dashboard`,
-    });
-    if (result.error) {
+    const redirectUri = `${window.location.origin}/dashboard`;
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
+      if (result.error) {
+        const err = result.error as any;
+        await logOAuthFailure({ data: {
+          provider: "google",
+          stage: "initiate",
+          errorCode: err?.code ?? err?.name ?? null,
+          errorMessage: err?.message ?? String(err ?? "unknown"),
+          redirectUri,
+          url: window.location.href,
+        }}).catch(() => {});
+        toast.error("Google sign-in failed");
+        setLoading(false);
+        return;
+      }
+      if (result.redirected) return;
+      navigate({ to: "/dashboard" });
+    } catch (e: any) {
+      await logOAuthFailure({ data: {
+        provider: "google",
+        stage: "initiate",
+        errorCode: e?.code ?? e?.name ?? null,
+        errorMessage: e?.message ?? String(e ?? "unknown"),
+        redirectUri,
+        url: window.location.href,
+      }}).catch(() => {});
       toast.error("Google sign-in failed");
       setLoading(false);
-      return;
     }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
   }
 
   return (
