@@ -47,54 +47,6 @@ export type Database = {
         }
         Relationships: []
       }
-      oauth_failure_logs: {
-        Row: {
-          email: string | null
-          error_code: string | null
-          error_message: string | null
-          id: string
-          ip: string | null
-          occurred_at: string
-          provider: string
-          redirect_uri: string | null
-          referer: string | null
-          stage: string
-          url: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          email?: string | null
-          error_code?: string | null
-          error_message?: string | null
-          id?: string
-          ip?: string | null
-          occurred_at?: string
-          provider: string
-          redirect_uri?: string | null
-          referer?: string | null
-          stage: string
-          url?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          email?: string | null
-          error_code?: string | null
-          error_message?: string | null
-          id?: string
-          ip?: string | null
-          occurred_at?: string
-          provider?: string
-          redirect_uri?: string | null
-          referer?: string | null
-          stage?: string
-          url?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null

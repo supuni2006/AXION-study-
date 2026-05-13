@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getRequestHeader, getRequestIP } from "@tanstack/react-start/server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const schema = z.object({
   provider: z.string().min(1).max(40),
@@ -34,23 +33,5 @@ export const logOAuthFailure = createServerFn({ method: "POST" })
     };
     // Structured single-line log for easy grep in server logs.
     console.error(`[oauth_failure] ${JSON.stringify(entry)}`);
-    try {
-      await supabaseAdmin.from("oauth_failure_logs").insert({
-        provider: entry.provider,
-        stage: entry.stage,
-        error_code: entry.errorCode,
-        error_message: entry.errorMessage,
-        user_id: entry.userId,
-        email: entry.email,
-        redirect_uri: entry.redirectUri,
-        url: entry.url,
-        ip: entry.ip,
-        user_agent: entry.userAgent,
-        referer: entry.referer,
-        occurred_at: entry.timestamp,
-      });
-    } catch (e) {
-      console.error("[oauth_failure] persist failed", e);
-    }
     return { ok: true };
   });
