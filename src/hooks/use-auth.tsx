@@ -21,13 +21,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Subscribe FIRST to avoid missing initial event
-    let initialEventFired = false;
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
-      if (!initialEventFired) {
-        initialEventFired = true;
-        setLoading(false);
-      }
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
