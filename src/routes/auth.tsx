@@ -30,6 +30,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signedUp, setSignedUp] = useState(false);
   const navigate = useNavigate();
   const { session } = useAuth();
 
@@ -45,13 +46,15 @@ function AuthPage() {
     const errorCode = url.searchParams.get("error") ?? hashParams.get("error");
     const errorDesc = url.searchParams.get("error_description") ?? hashParams.get("error_description");
     if (!errorCode && !errorDesc) return;
-    logOAuthFailure({ data: {
-      provider: "google",
-      stage: "callback",
-      errorCode,
-      errorMessage: errorDesc,
-      url: window.location.href,
-    }}).catch(() => {});
+    logOAuthFailure({
+      data: {
+        provider: "google",
+        stage: "callback",
+        errorCode,
+        errorMessage: errorDesc,
+        url: window.location.href,
+      }
+    }).catch(() => { });
     toast.error(errorDesc || `Google sign-in failed (${errorCode})`);
   }, []);
 
@@ -73,8 +76,7 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Welcome to AXION!");
-        navigate({ to: "/dashboard" });
+        setSignedUp(true);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -91,35 +93,51 @@ function AuthPage() {
     setLoading(true);
     const redirectUri = `${window.location.origin}/dashboard`;
     try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
-      if (result.error) {
-        const err = result.error as any;
-        await logOAuthFailure({ data: {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUri,
+        },
+      });
+      if (error) throw error;
+      // Supabase automatically redirects the browser. No further action needed here.
+    } catch (e: any) {
+      await logOAuthFailure({
+        data: {
           provider: "google",
           stage: "initiate",
-          errorCode: err?.code ?? err?.name ?? null,
-          errorMessage: err?.message ?? String(err ?? "unknown"),
+          errorCode: e?.code ?? e?.name ?? null,
+          errorMessage: e?.message ?? String(e ?? "unknown"),
           redirectUri,
           url: window.location.href,
-        }}).catch(() => {});
-        toast.error("Google sign-in failed");
-        setLoading(false);
-        return;
-      }
-      if (result.redirected) return;
-      navigate({ to: "/dashboard" });
-    } catch (e: any) {
-      await logOAuthFailure({ data: {
-        provider: "google",
-        stage: "initiate",
-        errorCode: e?.code ?? e?.name ?? null,
-        errorMessage: e?.message ?? String(e ?? "unknown"),
-        redirectUri,
-        url: window.location.href,
-      }}).catch(() => {});
+        }
+      }).catch(() => { });
       toast.error("Google sign-in failed");
       setLoading(false);
     }
+  }
+
+  if (signedUp) {
+    return (
+      <div className="mx-auto max-w-md py-10">
+        <div className="glass rounded-3xl p-8 text-center">
+          <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-hero text-primary-foreground shadow-glow">
+            <Mail className="h-7 w-7" />
+          </span>
+          <h1 className="text-xl font-bold">Check your inbox</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We sent a confirmation link to <strong>{email}</strong>.<br />
+            Click it to activate your account, then come back to sign in.
+          </p>
+          <button
+            onClick={() => { setSignedUp(false); setMode("signin"); }}
+            className="mt-6 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:scale-[1.01]"
+          >
+            Back to sign in
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
