@@ -90,67 +90,56 @@ function AuthPage() {
   }
 
   async function google() {
-    setLoading(true);
-    const redirectUri = `${window.location.origin}/dashboard`;
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUri,
-        },
-      });
-      if (error) throw error;
-      // Supabase automatically redirects the browser. No further action needed here.
-    } catch (e: any) {
-      await logOAuthFailure({
-        data: {
-          provider: "google",
-          stage: "initiate",
-          errorCode: e?.code ?? e?.name ?? null,
-          errorMessage: e?.message ?? String(e ?? "unknown"),
-          redirectUri,
-          url: window.location.href,
-<<<<<<< HEAD
-        }}).catch(() => {});
-        toast.error("Google sign-in failed");
-        setLoading(false);
-        return;
-      }
-
-  async function github() {
   setLoading(true);
+
+  const redirectUri = `${window.location.origin}/dashboard`;
+
   try {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
+      provider: "google",
       options: {
-        redirectTo: window.location.origin, // ← just the root, no /auth or /dashboard
+        redirectTo: redirectUri,
       },
     });
+
     if (error) throw error;
-  } catch (err: any) {
-    toast.error(err.message || "GitHub sign-in failed");
-    setLoading(false);
-  }
-}
-      if (result.redirected) return;
-      navigate({ to: "/dashboard" });
-    } catch (e: any) {
-      await logOAuthFailure({ data: {
+
+    // Supabase redirects automatically
+  } catch (e: any) {
+    await logOAuthFailure({
+      data: {
         provider: "google",
         stage: "initiate",
         errorCode: e?.code ?? e?.name ?? null,
         errorMessage: e?.message ?? String(e ?? "unknown"),
         redirectUri,
         url: window.location.href,
-      }}).catch(() => {});
-=======
-        }
-      }).catch(() => { });
->>>>>>> 2375080e74d4f65abb4c3b7b786ba93c472791c0
-      toast.error("Google sign-in failed");
-      setLoading(false);
-    }
+      },
+    }).catch(() => {});
+
+    toast.error("Google sign-in failed");
+    setLoading(false);
   }
+}
+      
+
+  async function github() {
+  setLoading(true);
+
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (error) throw error;
+  } catch (err: any) {
+    toast.error(err.message || "GitHub sign-in failed");
+    setLoading(false);
+  }
+}
 
   if (signedUp) {
     return (
