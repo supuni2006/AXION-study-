@@ -106,6 +106,22 @@ function AuthPage() {
         setLoading(false);
         return;
       }
+
+  async function github() {
+  setLoading(true);
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: window.location.origin, // ← just the root, no /auth or /dashboard
+      },
+    });
+    if (error) throw error;
+  } catch (err: any) {
+    toast.error(err.message || "GitHub sign-in failed");
+    setLoading(false);
+  }
+}
       if (result.redirected) return;
       navigate({ to: "/dashboard" });
     } catch (e: any) {
