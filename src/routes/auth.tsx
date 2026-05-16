@@ -30,7 +30,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [signedUp, setSignedUp] = useState(false);
   const navigate = useNavigate();
   const { session } = useAuth();
 
@@ -46,15 +45,13 @@ function AuthPage() {
     const errorCode = url.searchParams.get("error") ?? hashParams.get("error");
     const errorDesc = url.searchParams.get("error_description") ?? hashParams.get("error_description");
     if (!errorCode && !errorDesc) return;
-    logOAuthFailure({
-      data: {
-        provider: "google",
-        stage: "callback",
-        errorCode,
-        errorMessage: errorDesc,
-        url: window.location.href,
-      }
-    }).catch(() => { });
+    logOAuthFailure({ data: {
+      provider: "google",
+      stage: "callback",
+      errorCode,
+      errorMessage: errorDesc,
+      url: window.location.href,
+    }}).catch(() => {});
     toast.error(errorDesc || `Google sign-in failed (${errorCode})`);
   }, []);
 
@@ -76,7 +73,8 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        setSignedUp(true);
+        toast.success("Welcome to AXION!");
+        navigate({ to: "/dashboard" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -90,56 +88,32 @@ function AuthPage() {
   }
 
   async function google() {
-  setLoading(true);
-
-  const redirectUri = `${window.location.origin}/dashboard`;
-
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: redirectUri,
-      },
-    });
-
-    if (error) throw error;
-
-    // Supabase redirects automatically
-  } catch (e: any) {
-    await logOAuthFailure({
-      data: {
+    setLoading(true);
+    const redirectUri = `${window.location.origin}/dashboard`;
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        stage: "initiate",
-        errorCode: e?.code ?? e?.name ?? null,
-        errorMessage: e?.message ?? String(e ?? "unknown"),
-        redirectUri,
-        url: window.location.href,
-      },
-    }).catch(() => {});
-
-    toast.error("Google sign-in failed");
-    setLoading(false);
+        options: {
+          redirectTo: redirectUri,
+        },
+      });
+      if (error) throw error;
+      // Supabase automatically redirects the browser. No further action needed here.
+    } catch (e: any) {
+      await logOAuthFailure({
+        data: {
+          provider: "google",
+          stage: "initiate",
+          errorCode: e?.code ?? e?.name ?? null,
+          errorMessage: e?.message ?? String(e ?? "unknown"),
+          redirectUri,
+          url: window.location.href,
+        }
+      }).catch(() => { });
+      toast.error("Google sign-in failed");
+      setLoading(false);
+    }
   }
-}
-      
-
-  async function github() {
-  setLoading(true);
-
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-
-    if (error) throw error;
-  } catch (err: any) {
-    toast.error(err.message || "GitHub sign-in failed");
-    setLoading(false);
-  }
-}
 
   if (signedUp) {
     return (
