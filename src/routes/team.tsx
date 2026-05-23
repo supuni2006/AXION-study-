@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Sparkles, Users, Github, Linkedin, Mail } from "lucide-react";
+import { Sparkles, Github, Linkedin, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/team")({
@@ -26,6 +26,39 @@ const HUES = [
   "from-indigo-500 to-blue-500",
 ];
 
+const DEFAULT_MEMBERS: Member[] = [
+  {
+    id: "1",
+    name: "Chanithma Dangalla",
+    role: "TEAM LEAD · BACKEND / AI-ML ENGINEER",
+    bio: null,
+    avatar_url: null,
+    github_url: "https://github.com/Chanithmaaa",
+    linkedin_url: "https://www.linkedin.com/in/chanithma-dangalla-b52203339/",
+    email: "dangallachanithma3@gmail.com",
+  },
+  {
+    id: "2",
+    name: "Supuni Kaushalia",
+    role: "FRONTEND / BACKEND · UI/UX DESIGNER",
+    bio: null,
+    avatar_url: null,
+    github_url: "https://github.com/supuni2006",
+    linkedin_url: "www.linkedin.com/in/supuni-kaushalya-jayarathne-9140a12a6",
+    email: "supu2006k@gmail.com",
+  },
+  {
+    id: "3",
+    name: "Januki Udana",
+    role: "UI/UX DESIGNER · AI-ML ENGINEER",
+    bio: null,
+    avatar_url: null,
+    github_url: "https://github.com/Januki-Liyanapathirana",
+    linkedin_url: "https://www.linkedin.com/in/januki-liyanapathirana/",
+    email: "jkuliyanapathirana23@gmail.com",
+  },
+];
+
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
@@ -41,7 +74,7 @@ function TeamPage() {
         .select("id, name, role, bio, avatar_url, github_url, linkedin_url, email")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
-      setMembers(data ?? []);
+      setMembers(data && data.length > 0 ? data : DEFAULT_MEMBERS);
       setLoading(false);
     })();
   }, []);
@@ -64,14 +97,6 @@ function TeamPage() {
       <section>
         {loading ? (
           <p className="text-center text-sm text-muted-foreground">Loading…</p>
-        ) : members.length === 0 ? (
-          <div className="glass rounded-3xl p-10 text-center">
-            <Users className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="mt-3 text-sm text-muted-foreground">
-              No team members yet. Teachers can add them in the{" "}
-              <Link to="/admin" className="font-semibold text-primary hover:underline">Teacher panel</Link>.
-            </p>
-          </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {members.map((m, i) => (
