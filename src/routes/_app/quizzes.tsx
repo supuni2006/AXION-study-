@@ -75,31 +75,38 @@ function Quizzes() {
   function choose(idx: number) {
     if (picked !== null) return;
     setPicked(idx);
-    if (idx === q.answer) setScore((s) => s + 1);
-    setTimeout(() => advance(), 800);
+    const correct = idx === q.answer;
+    if (correct) setScore((s) => s + 1);
+    setTimeout(() => advance(correct), 800);
   }
 
   async function persist(finalScore: number) {
-    if (!user || !difficulty) return;
+    if (!user || !difficulty) {
+      if (!user) toast.error("Sign in to save your attempt");
+      return;
+    }
     setSaving(true);
     const xp = finalScore * XP_PER_CORRECT[difficulty];
     const { error } = await supabase.from("quiz_attempts").insert({
       user_id: user.id, topic: "Mixed", score: finalScore, total: bank.length,
       difficulty, xp_earned: xp,
     });
-    if (error) toast.error("Couldn't save attempt");
-    else {
-      const { data: prof } = await supabase.from("profiles").select("xp").eq("id", user.id).single();
+    if (error) {
+      console.error("[quiz_attempts insert]", error);
+      toast.error("Couldn't save attempt");
+    } else {
+      const { data: prof } = await supabase.from("profiles").select("xp").eq("id", user.id).maybeSingle();
       if (prof) await supabase.from("profiles").update({ xp: (prof.xp ?? 0) + xp }).eq("id", user.id);
       toast.success(`+${xp} XP saved!`);
     }
     setSaving(false);
   }
 
-  function advance() {
+  function advance(lastCorrect = false) {
     if (i + 1 >= bank.length) {
+      const finalScore = score + (lastCorrect ? 1 : 0);
       setDone(true);
-      persist(score + (picked !== null && picked === q.answer ? 0 : 0));
+      persist(finalScore);
       return;
     }
     setI((x) => x + 1);
