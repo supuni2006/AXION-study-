@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Teacher Panel — AXION" }] }),
+  head: () => ({ meta: [{ title: "Teacher Panel — LearnSync AI" }] }),
   component: AdminGate,
 });
 

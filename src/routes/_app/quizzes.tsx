@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/quizzes")({
-  head: () => ({ meta: [{ title: "Adaptive Quizzes — AXION" }] }),
+  head: () => ({ meta: [{ title: "Adaptive Quizzes — LearnSync AI" }] }),
   component: Quizzes,
 });
 

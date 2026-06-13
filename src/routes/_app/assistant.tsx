@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Send, Sparkles, User, Loader2, MessageCircle, Brain, Wand2, FileText } from "lucide-react";
+import { Bot, Send, Sparkles, User, Loader2, MessageCircle, Brain, Wand2, FileText, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/assistant")({
   validateSearch: (s: Record<string, unknown>) => ({ q: typeof s.q === "string" ? s.q : undefined }),
-  head: () => ({ meta: [{ title: "AI Assistant — AXION" }] }),
+  head: () => ({ meta: [{ title: "AI Assistant — LearnSync AI" }] }),
   component: Assistant,
 });
 
@@ -18,6 +18,22 @@ const TEACHERS: { id: Persona; name: string; tag: string; icon: typeof Bot; acce
   { id: "claude", name: "Claude Tutor", tag: "Calm · Socratic", icon: Brain, accent: "from-amber-400 to-rose-500" },
 ];
 
+const SYSTEM_PROMPTS: Record<Persona, string> = {
+  chatgpt: `You are ChatGPT Tutor, an upbeat and clear study coach.
+- Explain concepts step by step with simple analogies.
+- Use markdown headings, bullets, and short code blocks.
+- When asked, generate practice MCQs with answers + brief explanations.
+- Keep answers tight and encouraging.`,
+  gemini: `You are Gemini Tutor, a thoughtful, structured tutor with strong reasoning.
+- Lead with a one-line summary, then a structured breakdown.
+- Use tables when comparing things. Use code blocks for code.
+- For practice: generate MCQs with the correct answer flagged and a quick rationale.`,
+  claude: `You are Claude Tutor — calm, careful, and warm. Prioritize accuracy and nuance.
+- Think out loud briefly before answering hard questions.
+- Use markdown and Socratic prompts ("Try this first…") when appropriate.
+- For practice: produce MCQs grouped by difficulty with brief explanations.`,
+};
+
 const suggestions = [
   "Explain recursion with an example",
   "Generate 5 MCQs on photosynthesis",
@@ -28,6 +44,9 @@ const suggestions = [
 function Assistant() {
   const { q } = Route.useSearch();
   const [persona, setPersona] = useState<Persona>("chatgpt");
+  const [openAiKey, setOpenAiKey] = useState(() => localStorage.getItem("learnsync_openai_key") || "");
+  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem("learnsync_gemini_key") || "");
+  const [showKeys, setShowKeys] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: "Hi! Pick a teacher on the left, then ask anything — concepts, summaries, or practice quizzes." },
   ]);
@@ -53,23 +72,56 @@ function Assistant() {
     };
 
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
+      const activeKey = persona === "chatgpt" ? openAiKey : persona === "gemini" ? geminiKey : "";
+      const isDirectAPI = !!(activeKey.trim() && (persona === "chatgpt" || persona === "gemini"));
+
+      let url = "";
+      let headers: Record<string, string> = { "Content-Type": "application/json" };
+      let body: any = null;
+
+      if (isDirectAPI) {
+        if (persona === "chatgpt") {
+          url = "https://api.openai.com/v1/chat/completions";
+          body = {
+            model: "gpt-4o-mini",
+            messages: [{ role: "system", content: SYSTEM_PROMPTS.chatgpt }, ...next.map(({ role, content }) => ({ role, content }))],
+            stream: true,
+          };
+        } else {
+          url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+          body = {
+            model: "gemini-2.5-flash",
+            messages: [{ role: "system", content: SYSTEM_PROMPTS.gemini }, ...next.map(({ role, content }) => ({ role, content }))],
+            stream: true,
+          };
+        }
+        headers["Authorization"] = `Bearer ${activeKey.trim()}`;
+      } else {
+        url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+        headers["Authorization"] = `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`;
+        body = {
           persona,
           messages: next.map(({ role, content }) => ({ role, content })),
-        }),
+        };
+      }
+
+      const resp = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
 
       if (resp.status === 429) { toast.error("Rate limited. Try again shortly."); return; }
       if (resp.status === 402) { toast.error("AI credits exhausted."); return; }
-      if (!resp.ok || !resp.body) throw new Error("Stream failed");
+      if (!resp.ok) {
+        if (isDirectAPI && resp.status === 401) {
+          toast.error("Unauthorized: Invalid API key.");
+          return;
+        }
+        throw new Error("Stream failed");
+      }
+      if (!resp.body) throw new Error("Stream failed");
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -100,7 +152,7 @@ function Assistant() {
     } catch (e: any) {
       if (e.name !== "AbortError") {
         console.error(e);
-        toast.error("AI request failed");
+        toast.error("AI request failed. Please check your API key, connection, or quota.");
       }
     } finally {
       setLoading(false);
@@ -158,6 +210,51 @@ function Assistant() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="border-t border-border/60 pt-4">
+          <button
+            type="button"
+            onClick={() => setShowKeys(!showKeys)}
+            className="flex w-full items-center gap-2 rounded-2xl border bg-card/60 p-3 text-sm hover:border-primary/40 hover:bg-primary/5"
+          >
+            <Settings className="h-4 w-4 text-primary" />
+            <span className="font-semibold">API Keys Settings</span>
+            <span className="ml-auto text-xs text-muted-foreground">{showKeys ? "Hide" : "Edit"}</span>
+          </button>
+          {showKeys && (
+            <div className="mt-3 space-y-3 rounded-2xl border bg-card/40 p-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-semibold text-muted-foreground">OpenAI Key (ChatGPT)</label>
+                <input
+                  type="password"
+                  placeholder="sk-..."
+                  value={openAiKey}
+                  onChange={(e) => {
+                    setOpenAiKey(e.target.value);
+                    localStorage.setItem("learnsync_openai_key", e.target.value);
+                  }}
+                  className="w-full rounded-xl border bg-card px-3 py-2 outline-none focus:border-primary"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-muted-foreground">Gemini Key (Google)</label>
+                <input
+                  type="password"
+                  placeholder="AIzaSy..."
+                  value={geminiKey}
+                  onChange={(e) => {
+                    setGeminiKey(e.target.value);
+                    localStorage.setItem("learnsync_gemini_key", e.target.value);
+                  }}
+                  className="w-full rounded-xl border bg-card px-3 py-2 outline-none focus:border-primary"
+                />
+              </div>
+              <p className="text-[10px] leading-snug text-muted-foreground">
+                Saved locally. If empty, the system defaults to the pre-configured server API.
+              </p>
+            </div>
+          )}
         </div>
 
         <Link to="/admin"

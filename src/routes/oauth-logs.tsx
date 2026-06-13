@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/oauth-logs")({
-  head: () => ({ meta: [{ title: "OAuth failure logs — AXION" }] }),
+  head: () => ({ meta: [{ title: "OAuth failure logs — LearnSync AI" }] }),
   component: Page,
 });
 
