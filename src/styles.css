@@ -40,48 +40,50 @@
 
 :root {
   --radius: 1rem;
-  /* Pink + Yellow theme */
-  --background: oklch(0.985 0.012 20);
-  --foreground: oklch(0.22 0.04 350);
+  /* Teal + Navy Blue theme */
+  --background: oklch(0.985 0.008 240);
+  --foreground: oklch(0.20 0.05 240);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.04 350);
+  --card-foreground: oklch(0.20 0.05 240);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.04 350);
-  --primary: oklch(0.7 0.21 5);          /* hot pink */
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.04 60);
-  --secondary-foreground: oklch(0.3 0.05 30);
-  --muted: oklch(0.97 0.02 30);
-  --muted-foreground: oklch(0.5 0.04 350);
-  --accent: oklch(0.9 0.18 95);          /* sunny yellow */
-  --accent-foreground: oklch(0.25 0.06 60);
+  --popover-foreground: oklch(0.20 0.05 240);
+  --primary: oklch(0.22 0.07 240);          /* deep navy primary */
+  --primary-foreground: oklch(0.98 0.005 200);
+  --secondary: oklch(0.95 0.02 185);
+  --secondary-foreground: oklch(0.22 0.06 240);
+  --muted: oklch(0.96 0.01 240);
+  --muted-foreground: oklch(0.45 0.04 240);
+  --accent: oklch(0.62 0.15 185);           /* modern teal accent */
+  --accent-foreground: oklch(0.12 0.04 240);
   --destructive: oklch(0.6 0.24 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.04 350);
-  --input: oklch(0.94 0.03 350);
-  --ring: oklch(0.7 0.21 5);
+  --border: oklch(0.92 0.02 185);           /* subtle teal borders */
+  --input: oklch(0.94 0.02 185);
+  --ring: oklch(0.62 0.15 185);
+  --primary-heading: oklch(0.16 0.06 240);  /* deep navy emphasis */
 }
 
 .dark {
-  --background: oklch(0.16 0.04 350);
-  --foreground: oklch(0.97 0.01 60);
-  --card: oklch(0.22 0.05 350);
-  --card-foreground: oklch(0.97 0.01 60);
-  --popover: oklch(0.22 0.05 350);
-  --popover-foreground: oklch(0.97 0.01 60);
-  --primary: oklch(0.78 0.2 5);
-  --primary-foreground: oklch(0.15 0.04 350);
-  --secondary: oklch(0.28 0.05 30);
-  --secondary-foreground: oklch(0.97 0.01 60);
-  --muted: oklch(0.26 0.04 350);
-  --muted-foreground: oklch(0.72 0.04 30);
-  --accent: oklch(0.85 0.2 95);
-  --accent-foreground: oklch(0.2 0.05 60);
+  --background: oklch(0.12 0.03 240);       /* deep navy background */
+  --foreground: oklch(0.97 0.01 200);
+  --card: oklch(0.16 0.04 240);             /* dark glass panel background */
+  --card-foreground: oklch(0.97 0.01 200);
+  --popover: oklch(0.16 0.04 240);
+  --popover-foreground: oklch(0.97 0.01 200);
+  --primary: oklch(0.45 0.14 240);          /* bright navy / cobalt primary in dark mode */
+  --primary-foreground: oklch(0.99 0.005 200);
+  --secondary: oklch(0.20 0.04 240);
+  --secondary-foreground: oklch(0.97 0.01 200);
+  --muted: oklch(0.18 0.03 240);
+  --muted-foreground: oklch(0.70 0.03 200);
+  --accent: oklch(0.72 0.15 185);           /* glowing teal accent */
+  --accent-foreground: oklch(0.12 0.04 240);
   --destructive: oklch(0.65 0.24 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.78 0.2 5);
+  --border: oklch(0.22 0.04 185);           /* subtle dark teal border */
+  --input: oklch(0.24 0.04 185);
+  --ring: oklch(0.72 0.15 185);
+  --primary-heading: oklch(0.95 0.01 200);  /* soft white/cyan heading */
 }
 
 @layer base {
@@ -89,27 +91,37 @@
   html { scroll-behavior: smooth; }
   body {
     background:
-      radial-gradient(ellipse 80% 60% at 10% 0%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 90% 10%, color-mix(in oklab, var(--accent) 28%, transparent), transparent 60%),
-      radial-gradient(ellipse 90% 60% at 50% 100%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 10% 0%, color-mix(in oklab, var(--accent) 15%, transparent), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 90% 10%, color-mix(in oklab, var(--primary) 20%, transparent), transparent 60%),
+      radial-gradient(ellipse 90% 60% at 50% 100%, color-mix(in oklab, var(--accent) 10%, transparent), transparent 60%),
       var(--color-background);
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1, h2, h3, h4 { 
+    font-family: var(--font-display); 
+    letter-spacing: -0.02em; 
+    color: var(--primary-heading);
+  }
+  
+  /* Focus, hover, and active states improvements */
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 @layer utilities {
   .glass {
-    background: color-mix(in oklab, white 55%, transparent);
+    background: color-mix(in oklab, white 60%, transparent);
     backdrop-filter: blur(18px) saturate(140%);
-    border: 1px solid color-mix(in oklab, var(--primary) 18%, transparent);
+    border: 1px solid color-mix(in oklab, var(--accent) 20%, transparent);
     box-shadow: var(--shadow-soft);
   }
   .dark .glass {
     background: color-mix(in oklab, var(--card) 60%, transparent);
-    border-color: color-mix(in oklab, var(--primary) 24%, transparent);
+    border-color: color-mix(in oklab, var(--accent) 15%, transparent);
   }
   .text-gradient {
     background: linear-gradient(120deg, var(--primary), var(--accent));

@@ -6,10 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/team")({
   head: () => ({
     meta: [
-      { title: "Meet the team — AXION" },
-      { name: "description", content: "The educators, engineers, and researchers building AXION." },
-      { property: "og:title", content: "Meet the team — AXION" },
-      { property: "og:description", content: "The educators, engineers, and researchers building AXION." },
+      { title: "Meet the team — LearnSync AI" },
+      { name: "description", content: "The educators, engineers, and researchers building LearnSync AI." },
+      { property: "og:title", content: "Meet the team — LearnSync AI" },
+      { property: "og:description", content: "The educators, engineers, and researchers building LearnSync AI." },
     ],
   }),
   component: TeamPage,
@@ -53,7 +53,7 @@ function TeamPage() {
           <Sparkles className="h-6 w-6" />
         </span>
         <h1 className="mt-4 text-4xl font-bold md:text-5xl">
-          Meet the <span className="text-gradient">AXION</span> team
+          Meet the <span className="text-gradient">LearnSync AI</span> team
         </h1>
         <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
           A small, fully-remote crew of teachers, engineers, and AI researchers building the
@@ -120,7 +120,7 @@ function TeamPage() {
           We're hiring engineers, designers, and educators who care deeply about making learning joyful.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <a href="mailto:careers@axion.app" className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow hover:scale-[1.02]">
+          <a href="mailto:careers@learnsync.ai" className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow hover:scale-[1.02]">
             See open roles
           </a>
           <Link to="/dashboard" className="rounded-full border bg-card px-6 py-2.5 text-sm font-semibold hover:bg-accent/40">

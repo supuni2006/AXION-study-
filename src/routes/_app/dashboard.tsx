@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — AXION" },
+      { title: "Dashboard — LearnSync AI" },
       { name: "description", content: "Your personalized learning dashboard with progress, recommendations, and streaks." },
     ],
   }),
