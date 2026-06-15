@@ -22,7 +22,7 @@ export function SiteNav() {
             <Sparkles className="h-4 w-4" />
           </span>
           <span className="font-display text-lg font-bold tracking-tight">
-            <span className="text-gradient">AXION</span>
+            <span className="text-gradient">LearnSync AI</span>
           </span>
         </Link>
         <ul className="hidden items-center gap-1 md:flex">
@@ -47,7 +47,7 @@ export function SiteNav() {
             <LogOut className="h-3.5 w-3.5" /> Sign out
           </button>
         ) : (
-          <Link to="/auth" className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-glow">
+          <Link to="/auth" search={{ mode: "signin" }} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-glow">
             Sign in
           </Link>
         )}

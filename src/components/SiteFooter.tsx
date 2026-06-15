@@ -12,7 +12,7 @@ export function SiteFooter() {
               <span className="grid h-9 w-9 place-items-center rounded-full bg-hero text-primary-foreground">
                 <Sparkles className="h-4 w-4" />
               </span>
-              <span className="font-display text-lg font-bold">AXION</span>
+              <span className="font-display text-lg font-bold">LearnSync AI</span>
             </div>
             <p className="mt-3 max-w-sm text-sm text-muted-foreground">
               Personalized, adaptive learning powered by AI. Built for the next generation of curious minds.
@@ -53,16 +53,16 @@ export function SiteFooter() {
             <h4 className="text-sm font-semibold">Company</h4>
             <ul className="mt-3 space-y-2 text-sm">
               <li><Link to="/" className="text-muted-foreground hover:text-foreground">About</Link></li>
-              <li><Link to="/auth" className="text-muted-foreground hover:text-foreground">Sign in</Link></li>
+              <li><Link to="/auth" search={{ mode: "signin" }} className="text-muted-foreground hover:text-foreground">Sign in</Link></li>
               <li>
-                <a href="mailto:hello@axion.app" className="text-muted-foreground hover:text-foreground">Contact</a>
+                <a href="mailto:hello@learnsync.ai" className="text-muted-foreground hover:text-foreground">Contact</a>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-border/60 pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center">
-          <p>© {new Date().getFullYear()} AXION · Built for HackElite</p>
+          <p>© {new Date().getFullYear()} LearnSync AI · Built for HackElite</p>
           <div className="flex gap-3">
             <a aria-label="Twitter" target="_blank" rel="noreferrer" className="rounded-full border p-2 hover:bg-accent/40" href="https://twitter.com"><Twitter className="h-4 w-4" /></a>
             <a aria-label="GitHub" target="_blank" rel="noreferrer" className="rounded-full border p-2 hover:bg-accent/40" href="https://github.com"><Github className="h-4 w-4" /></a>

@@ -7,7 +7,7 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AXION — Learn Smarter with AI" },
+      { title: "LearnSync AI — Learn Smarter with AI" },
       { name: "description", content: "Personalized AI-powered education with adaptive quizzes, study plans, and your own AI study assistant." },
     ],
   }),
@@ -52,14 +52,14 @@ function Landing() {
               <span className="text-gradient">AI-Powered</span> Personalized Education
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              AXION builds a study plan around <em>you</em> — your pace, your gaps, your goals.
+              LearnSync AI builds a study plan around <em>you</em> — your pace, your gaps, your goals.
               Adaptive quizzes, real analytics, and a 24/7 AI tutor.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Link to="/dashboard" className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow transition-transform hover:scale-[1.03]">
+              <Link to="/auth" search={{ mode: "signup" }} className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow transition-transform hover:scale-[1.03]">
                 Start Learning Free <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
-              <Link to="/assistant" className="inline-flex items-center gap-2 rounded-full border border-accent bg-accent/40 px-6 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/60">
+              <Link to="/auth" search={{ mode: "signup" }} className="inline-flex items-center gap-2 rounded-full border border-accent bg-accent/40 px-6 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/60">
                 Try the AI Assistant
               </Link>
             </div>
@@ -153,11 +153,11 @@ function Landing() {
             Join thousands of students learning faster with personalized AI plans.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/dashboard" className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow">
-              Open Dashboard
+            <Link to="/auth" search={{ mode: "signup" }} className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow">
+              Get Started Free
             </Link>
-            <Link to="/quizzes" className="rounded-full border border-accent bg-accent/50 px-6 py-3 text-sm font-semibold text-accent-foreground">
-              <span className="inline-flex items-center gap-2"><BookOpen className="h-4 w-4" /> Try a Quiz</span>
+            <Link to="/auth" search={{ mode: "signin" }} className="rounded-full border border-accent bg-accent/50 px-6 py-3 text-sm font-semibold text-accent-foreground">
+              <span className="inline-flex items-center gap-2"><BookOpen className="h-4 w-4" /> Sign In</span>
             </Link>
           </div>
         </div>
