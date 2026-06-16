@@ -111,7 +111,6 @@ function Landing() {
   });
 
   return (
-    // Breakout wrapper — escapes the parent mx-auto w-[min(1200px,94%)] constraint
     <div style={{
       position: "relative",
       left: "50%",
@@ -151,7 +150,8 @@ function Landing() {
           backgroundSize: "60px 60px",
         }} />
 
-        <div style={{ position: "relative", zIndex: 1, width: "100%", padding: "8rem 2rem 5rem", textAlign: "center" }}>
+        {/* Hero content — padding-top accounts for sticky nav height */}
+        <div style={{ position: "relative", zIndex: 1, width: "100%", padding: "7rem 2rem 5rem", textAlign: "center" }}>
           <div style={{ maxWidth: 900, margin: "0 auto" }}>
 
             <div style={{ ...fade(0), display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(0,196,180,0.1)", border: "1px solid rgba(0,196,180,0.35)", borderRadius: 99, padding: "6px 16px", marginBottom: 32 }}>

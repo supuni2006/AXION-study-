@@ -7,6 +7,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "sonner";
+import { useRouterState } from "@tanstack/react-router";
 
 function NotFoundComponent() {
   return (
@@ -69,19 +70,25 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
+      <body style={{ margin: 0, padding: 0 }}>{children}<Scripts /></body>
     </html>
   );
 }
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { location } = useRouterState();
+  const isHome = location.pathname === "/";
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen">
           <SiteNav />
-          <main className="mx-auto w-[min(1200px,94%)] pt-8">
+          <main className={isHome
+            ? "mx-auto w-[min(1200px,94%)]"
+            : "mx-auto w-[min(1200px,94%)] pt-8"
+          }>
             <Outlet />
           </main>
           <SiteFooter />
