@@ -47,7 +47,7 @@ function Dashboard() {
       const [{ data: prof }, { data: mats }, { data: atts }] = await Promise.all([
         supabase.from("profiles").select("full_name, xp, streak").eq("id", user.id).maybeSingle(),
         supabase.from("materials").select("id, title, subject, description, created_at").order("created_at", { ascending: false }).limit(5),
-        supabase.from("quiz_attempts").select("id, topic, score, total, difficulty, xp_earned, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+        supabase.from("quiz_attempts").select("id, topic, score, total, difficulty, xp_earned, created_at").eq("user_id", user.id).gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()).order("created_at", { ascending: false }),
       ]);
       setProfile(prof ?? null);
       setMaterials(mats ?? []);
@@ -181,7 +181,7 @@ function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="glass rounded-3xl p-6 lg:col-span-2">
           <SectionTitle icon={TrendingUp}>Weekly Analytics</SectionTitle>
-          <BarChart />
+          <BarChart attempts={attempts} />
         </div>
         <div className="glass rounded-3xl p-6">
           <SectionTitle icon={Trophy}>Achievements</SectionTitle>
@@ -241,25 +241,81 @@ function StatPill({ icon: Icon, label, value, tone }: { icon: any; label: string
   );
 }
 
-function BarChart() {
-  const data = [40, 65, 50, 80, 72, 90, 60];
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
+function BarChart({ attempts }: { attempts: Attempt[] }) {
+  // Build last 7 days — Sun=0 … Sat=6
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const today = new Date();
+
+  const buckets = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    const dateStr = d.toISOString().slice(0, 10);
+    const dayLabel = days[d.getDay()];
+    // Count XP earned that day
+    const xp = attempts
+      .filter((a) => a.created_at.slice(0, 10) === dateStr)
+      .reduce((sum, a) => sum + (a.xp_earned ?? 0), 0);
+    const quizzes = attempts.filter((a) => a.created_at.slice(0, 10) === dateStr).length;
+    return { day: dayLabel, xp, quizzes };
+  });
+
+  const maxXP = Math.max(...buckets.map((b) => b.xp), 1);
+  const totalXP = buckets.reduce((s, b) => s + b.xp, 0);
+  const totalQuizzes = buckets.reduce((s, b) => s + b.quizzes, 0);
+
   return (
     <div className="mt-5">
-      <div className="flex h-44 items-end gap-3">
-        {data.map((v, i) => (
-          <div key={i} className="flex flex-1 flex-col items-center gap-2">
-            <div className="flex w-full flex-1 items-end">
-              <div
-                className="w-full rounded-t-xl bg-gradient-to-t from-primary to-accent transition-all hover:opacity-80"
-                style={{ height: `${v}%` }}
-              />
-            </div>
-            <span className="text-xs text-muted-foreground">{days[i]}</span>
+      {/* Summary row */}
+      <div className="mb-4 flex gap-4">
+        <div className="rounded-xl bg-primary/10 px-4 py-2 text-center">
+          <div className="text-lg font-bold text-primary">{totalXP}</div>
+          <div className="text-xs text-muted-foreground">XP this week</div>
+        </div>
+        <div className="rounded-xl bg-accent/20 px-4 py-2 text-center">
+          <div className="text-lg font-bold text-accent-foreground">{totalQuizzes}</div>
+          <div className="text-xs text-muted-foreground">Quizzes done</div>
+        </div>
+        {totalQuizzes === 0 && (
+          <div className="flex flex-1 items-center rounded-xl border border-dashed bg-card/40 px-4 py-2">
+            <p className="text-xs text-muted-foreground">
+              No activity this week yet —{" "}
+              <Link to="/quizzes" className="font-semibold text-primary hover:underline">take a quiz!</Link>
+            </p>
           </div>
-        ))}
+        )}
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">Minutes learned · last 7 days</p>
+
+      {/* Bar chart */}
+      <div className="flex h-40 items-end gap-2">
+        {buckets.map((b, i) => {
+          const heightPct = maxXP > 0 ? Math.max((b.xp / maxXP) * 100, b.xp > 0 ? 8 : 0) : 0;
+          const isToday = i === 6;
+          return (
+            <div key={i} className="flex flex-1 flex-col items-center gap-1.5 group relative">
+              {/* Tooltip */}
+              {b.xp > 0 && (
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 rounded-lg bg-foreground px-2 py-1 text-[10px] font-semibold text-background opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                  {b.xp} XP · {b.quizzes} quiz{b.quizzes !== 1 ? "zes" : ""}
+                </div>
+              )}
+              <div className="flex w-full flex-1 items-end">
+                <div
+                  className={`w-full rounded-t-xl transition-all duration-500 ${
+                    b.xp > 0
+                      ? "bg-gradient-to-t from-primary to-accent"
+                      : "bg-muted/40"
+                  } ${isToday ? "ring-2 ring-primary/30" : ""}`}
+                  style={{ height: b.xp > 0 ? `${heightPct}%` : "6px" }}
+                />
+              </div>
+              <span className={`text-[11px] font-medium ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                {isToday ? "Today" : b.day}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">XP earned per day · last 7 days · hover bars for details</p>
     </div>
   );
 }
