@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -36,17 +35,17 @@ function TeacherSignIn() {
 
   async function google() {
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/admin`,
-      },
-    });
-    if (error) {
-      toast.error("Google sign-in failed: " + error.message);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/admin` },
+      });
+      if (error) throw error;
+      // Page will redirect — no need to setBusy(false)
+    } catch (e: any) {
+      toast.error(e?.message || "Google sign-in failed");
       setBusy(false);
     }
-    // If no error, browser will redirect automatically
   }
 
   return (
@@ -256,7 +255,7 @@ function Admin() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           mode: "questions",
@@ -570,276 +569,12 @@ function Admin() {
         </div>
       </div>
 
-      <TeamManager isTeacher={isTeacher} userId={user?.id ?? null} />
     </div>
   );
 }
 
 type TeamMember = { id: string; name: string; role: string; bio: string | null; avatar_url: string | null; sort_order: number; github_url: string | null; linkedin_url: string | null; email: string | null };
 
-function TeamManager({ isTeacher, userId }: { isTeacher: boolean; userId: string | null }) {
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [bio, setBio] = useState("");
-  const [github, setGithub] = useState("");
-  const [linkedin, setLinkedin] = useState("");
-  const [email, setEmail] = useState("");
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<{ github_url: string; linkedin_url: string; email: string }>({ github_url: "", linkedin_url: "", email: "" });
-
-  async function load() {
-    setLoading(true);
-    const { data } = await supabase
-      .from("team_members")
-      .select("id, name, role, bio, avatar_url, sort_order, github_url, linkedin_url, email")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
-    setMembers(data ?? []);
-    setLoading(false);
-  }
-  useEffect(() => { load(); }, []);
-
-  async function uploadAvatar(file: File): Promise<string | null> {
-    if (!userId) return null;
-    const ext = file.name.split(".").pop() || "png";
-    const path = `${userId}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
-    if (error) { toast.error(error.message); return null; }
-    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-    return data.publicUrl;
-  }
-
-  async function addMember(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !role.trim()) { toast.error("Name and role required"); return; }
-    if (!userId) return;
-    setSaving(true);
-    try {
-      let avatar_url: string | null = null;
-      if (avatarFile) avatar_url = await uploadAvatar(avatarFile);
-      const { error } = await supabase.from("team_members").insert({
-        name: name.slice(0, 80),
-        role: role.slice(0, 80),
-        bio: bio.slice(0, 400) || null,
-        avatar_url,
-        sort_order: members.length,
-        created_by: userId,
-        github_url: github.trim() || null,
-        linkedin_url: linkedin.trim() || null,
-        email: email.trim() || null,
-      });
-      if (error) throw error;
-      toast.success(`Added ${name}`);
-      setName(""); setRole(""); setBio(""); setAvatarFile(null);
-      setGithub(""); setLinkedin(""); setEmail("");
-      load();
-    } catch (err: any) {
-      toast.error(err.message || "Couldn't add member");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function replaceAvatar(m: TeamMember, file: File) {
-    setUploadingId(m.id);
-    try {
-      const url = await uploadAvatar(file);
-      if (!url) return;
-      const { error } = await supabase.from("team_members").update({ avatar_url: url }).eq("id", m.id);
-      if (error) throw error;
-      toast.success("Avatar updated");
-      load();
-    } catch (err: any) {
-      toast.error(err.message || "Upload failed");
-    } finally {
-      setUploadingId(null);
-    }
-  }
-
-  async function removeAvatar(m: TeamMember) {
-    const { error } = await supabase.from("team_members").update({ avatar_url: null }).eq("id", m.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Avatar removed");
-    load();
-  }
-
-  async function deleteMember(m: TeamMember) {
-    if (!confirm(`Remove ${m.name}?`)) return;
-    const { error } = await supabase.from("team_members").delete().eq("id", m.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Removed");
-    load();
-  }
-
-  function startEdit(m: TeamMember) {
-    setEditingId(m.id);
-    setEditDraft({
-      github_url: m.github_url ?? "",
-      linkedin_url: m.linkedin_url ?? "",
-      email: m.email ?? "",
-    });
-  }
-
-  async function saveSocials(m: TeamMember) {
-    const { error } = await supabase.from("team_members").update({
-      github_url: editDraft.github_url.trim() || null,
-      linkedin_url: editDraft.linkedin_url.trim() || null,
-      email: editDraft.email.trim() || null,
-    }).eq("id", m.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Links saved");
-    setEditingId(null);
-    load();
-  }
-
-  return (
-    <div className="glass rounded-3xl p-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Users className="h-4 w-4 text-primary" /> Team members
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage who appears on the public <Link to="/team" className="text-primary hover:underline">/team</Link> page. Upload avatar photos here.
-          </p>
-        </div>
-      </div>
-
-      {isTeacher && (
-        <form onSubmit={addMember} className="mt-5 grid gap-3 rounded-2xl border bg-card/40 p-4 md:grid-cols-[auto,1fr,1fr]">
-          <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-card/70 text-center text-xs hover:border-primary/50">
-            {avatarFile ? (
-              <img src={URL.createObjectURL(avatarFile)} alt="preview" className="h-full w-full rounded-2xl object-cover" />
-            ) : (
-              <>
-                <Upload className="h-4 w-4 text-muted-foreground" />
-                <span className="mt-1 text-muted-foreground">Photo</span>
-              </>
-            )}
-            <input type="file" accept="image/*" className="hidden"
-              onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)} />
-          </label>
-          <div className="space-y-2">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" maxLength={80}
-              className="w-full rounded-xl border bg-card/70 px-3 py-2 text-sm outline-none focus:border-primary" />
-            <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role (e.g. Founder)" maxLength={80}
-              className="w-full rounded-xl border bg-card/70 px-3 py-2 text-sm outline-none focus:border-primary" />
-          </div>
-          <div className="space-y-2">
-            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} placeholder="Short bio" maxLength={400}
-              className="w-full rounded-xl border bg-card/70 px-3 py-2 text-sm outline-none focus:border-primary" />
-            <button type="submit" disabled={saving}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary py-2 text-sm font-semibold text-primary-foreground shadow-glow disabled:opacity-50">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Add member
-            </button>
-          </div>
-          <div className="grid gap-2 md:col-span-3 md:grid-cols-3">
-            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
-              <Github className="h-4 w-4 text-muted-foreground" />
-              <input value={github} onChange={(e) => setGithub(e.target.value)} placeholder="GitHub URL"
-                className="w-full bg-transparent py-2 text-sm outline-none" />
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
-              <Linkedin className="h-4 w-4 text-muted-foreground" />
-              <input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="LinkedIn URL"
-                className="w-full bg-transparent py-2 text-sm outline-none" />
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border bg-card/70 px-3">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
-                className="w-full bg-transparent py-2 text-sm outline-none" />
-            </div>
-          </div>
-        </form>
-      )}
-      {!isTeacher && <p className="mt-4 text-xs text-muted-foreground">Need teacher role to manage team members.</p>}
-
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {!loading && members.length === 0 && <p className="text-sm text-muted-foreground">No team members yet.</p>}
-        {members.map((m) => (
-          <div key={m.id} className="flex gap-3 rounded-2xl border bg-card/60 p-3">
-            <div className="relative">
-              {m.avatar_url ? (
-                <img src={m.avatar_url} alt={m.name} className="h-16 w-16 rounded-xl object-cover" />
-              ) : (
-                <div className="grid h-16 w-16 place-items-center rounded-xl bg-hero text-sm font-bold text-primary-foreground">
-                  {m.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
-                </div>
-              )}
-              {uploadingId === m.id && (
-                <div className="absolute inset-0 grid place-items-center rounded-xl bg-black/40">
-                  <Loader2 className="h-4 w-4 animate-spin text-white" />
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{m.name}</p>
-              <p className="truncate text-xs text-primary">{m.role}</p>
-              {m.bio && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{m.bio}</p>}
-              <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                {m.github_url && <a href={m.github_url} target="_blank" rel="noreferrer" className="hover:text-primary"><Github className="h-3.5 w-3.5" /></a>}
-                {m.linkedin_url && <a href={m.linkedin_url} target="_blank" rel="noreferrer" className="hover:text-primary"><Linkedin className="h-3.5 w-3.5" /></a>}
-                {m.email && <a href={`mailto:${m.email}`} className="hover:text-primary"><Mail className="h-3.5 w-3.5" /></a>}
-              </div>
-              {isTeacher && editingId === m.id && (
-                <div className="mt-2 space-y-1.5">
-                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
-                    <Github className="h-3 w-3 text-muted-foreground" />
-                    <input value={editDraft.github_url} onChange={(e) => setEditDraft((d) => ({ ...d, github_url: e.target.value }))} placeholder="GitHub URL" className="w-full bg-transparent py-1 text-xs outline-none" />
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
-                    <Linkedin className="h-3 w-3 text-muted-foreground" />
-                    <input value={editDraft.linkedin_url} onChange={(e) => setEditDraft((d) => ({ ...d, linkedin_url: e.target.value }))} placeholder="LinkedIn URL" className="w-full bg-transparent py-1 text-xs outline-none" />
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-lg border bg-card/70 px-2">
-                    <Mail className="h-3 w-3 text-muted-foreground" />
-                    <input value={editDraft.email} onChange={(e) => setEditDraft((d) => ({ ...d, email: e.target.value }))} placeholder="Email" className="w-full bg-transparent py-1 text-xs outline-none" />
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button onClick={() => saveSocials(m)} className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"><Check className="h-3 w-3" /> Save</button>
-                    <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 text-xs"><X className="h-3 w-3" /> Cancel</button>
-                  </div>
-                </div>
-              )}
-              {isTeacher && (
-                <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
-                  <label className="inline-flex cursor-pointer items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-primary/40">
-                    <Upload className="h-3 w-3" /> {m.avatar_url ? "Replace" : "Upload"}
-                    <input type="file" accept="image/*" className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) replaceAvatar(m, f); }} />
-                  </label>
-                  {m.avatar_url && (
-                    <button onClick={() => removeAvatar(m)}
-                      className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-rose-400/50 hover:text-rose-500">
-                      <X className="h-3 w-3" /> Photo
-                    </button>
-                  )}
-                  {editingId !== m.id && (
-                    <button onClick={() => startEdit(m)}
-                      className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-primary/40">
-                      <Pencil className="h-3 w-3" /> Links
-                    </button>
-                  )}
-                  <button onClick={() => deleteMember(m)}
-                    className="inline-flex items-center gap-1 rounded-full border bg-card/70 px-2.5 py-1 hover:border-rose-400/50 hover:text-rose-500">
-                    <Trash2 className="h-3 w-3" /> Remove
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function Kpi({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
