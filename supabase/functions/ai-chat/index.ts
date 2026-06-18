@@ -22,25 +22,76 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 - Use markdown for clarity. Produce MCQs grouped by difficulty with explanations.`,
 };
 
+const QUESTION_SYSTEM = `You are an expert quiz generator for LearnSync AI.
+Given study material, generate exactly 5 multiple-choice questions.
+Return ONLY valid JSON — no markdown, no backticks, no preamble.
+Format:
+{
+  "questions": [
+    {
+      "q": "Question text",
+      "options": ["A", "B", "C", "D"],
+      "answer": 0,
+      "explanation": "Why this is correct"
+    }
+  ]
+}
+Rules:
+- answer is the 0-based index of the correct option
+- Always 4 options per question
+- Explanations must be concise (1-2 sentences)
+- Questions must be directly based on the provided material`;
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { persona, messages } = await req.json();
-    const systemPrompt = SYSTEM_PROMPTS[persona] ?? SYSTEM_PROMPTS.claude;
+    const body = await req.json();
+    const { mode, persona, messages, context } = body;
 
     const client = new Anthropic({
       apiKey: Deno.env.get("ANTHROPIC_API_KEY") ?? "",
     });
 
-    // Create a streaming response
+    // ── MODE: questions (admin PDF quiz generator) ──────────────────────────
+    if (mode === "questions") {
+      if (!context || context.trim().length < 40) {
+        return new Response(JSON.stringify({ error: "Not enough context to generate questions" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const message = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1024,
+        system: QUESTION_SYSTEM,
+        messages: [
+          {
+            role: "user",
+            content: `Generate 5 MCQs based on this material:\n\n${context.slice(0, 12000)}`,
+          },
+        ],
+      });
+
+      const text = message.content
+        .filter((b: any) => b.type === "text")
+        .map((b: any) => b.text)
+        .join("");
+
+      return new Response(JSON.stringify({ text }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── MODE: chat (AI assistant streaming) ────────────────────────────────
+    const systemPrompt = SYSTEM_PROMPTS[persona] ?? SYSTEM_PROMPTS.claude;
+
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
-
         try {
           const anthropicStream = client.messages.stream({
             model: "claude-sonnet-4-6",
@@ -84,6 +135,7 @@ Deno.serve(async (req) => {
         Connection: "keep-alive",
       },
     });
+
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: String(err) }), {

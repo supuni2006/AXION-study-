@@ -46,7 +46,7 @@ const XP_PER_CORRECT: Record<Difficulty, number> = { Easy: 30, Medium: 50, Hard:
 function shuffle<T>(arr: T[]) { return [...arr].sort(() => Math.random() - 0.5); }
 
 function Quizzes() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [bank, setBank] = useState<Q[]>([]);
   const [i, setI] = useState(0);
@@ -98,6 +98,8 @@ function Quizzes() {
       const { data: prof } = await supabase.from("profiles").select("xp").eq("id", user.id).maybeSingle();
       if (prof) await supabase.from("profiles").update({ xp: (prof.xp ?? 0) + xp }).eq("id", user.id);
       toast.success(`+${xp} XP saved!`);
+      // Refresh global profile so XP pill updates everywhere instantly
+      await refreshProfile();
     }
     setSaving(false);
   }

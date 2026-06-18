@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -36,16 +36,17 @@ function TeacherSignIn() {
 
   async function google() {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/admin`,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/admin`,
+      },
     });
-    if (result.error) {
-      toast.error("Google sign-in failed");
+    if (error) {
+      toast.error("Google sign-in failed: " + error.message);
       setBusy(false);
-      return;
     }
-    if (result.redirected) return;
-    setBusy(false);
+    // If no error, browser will redirect automatically
   }
 
   return (
@@ -255,7 +256,7 @@ function Admin() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           mode: "questions",
