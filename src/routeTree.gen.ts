@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TeamRouteImport } from './routes/team'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OauthLogsRouteImport } from './routes/oauth-logs'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -19,9 +19,9 @@ import { Route as AppQuizzesRouteImport } from './routes/_app/quizzes'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAssistantRouteImport } from './routes/_app/assistant'
 
-const TeamRoute = TeamRouteImport.update({
-  id: '/team',
-  path: '/team',
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OauthLogsRoute = OauthLogsRouteImport.update({
@@ -69,7 +69,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/oauth-logs': typeof OauthLogsRoute
-  '/team': typeof TeamRoute
+  '/pricing': typeof PricingRoute
   '/assistant': typeof AppAssistantRoute
   '/dashboard': typeof AppDashboardRoute
   '/quizzes': typeof AppQuizzesRoute
@@ -79,7 +79,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/oauth-logs': typeof OauthLogsRoute
-  '/team': typeof TeamRoute
+  '/pricing': typeof PricingRoute
   '/assistant': typeof AppAssistantRoute
   '/dashboard': typeof AppDashboardRoute
   '/quizzes': typeof AppQuizzesRoute
@@ -91,7 +91,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/oauth-logs': typeof OauthLogsRoute
-  '/team': typeof TeamRoute
+  '/pricing': typeof PricingRoute
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/quizzes': typeof AppQuizzesRoute
@@ -103,7 +103,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/oauth-logs'
-    | '/team'
+    | '/pricing'
     | '/assistant'
     | '/dashboard'
     | '/quizzes'
@@ -113,7 +113,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/oauth-logs'
-    | '/team'
+    | '/pricing'
     | '/assistant'
     | '/dashboard'
     | '/quizzes'
@@ -124,7 +124,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/oauth-logs'
-    | '/team'
+    | '/pricing'
     | '/_app/assistant'
     | '/_app/dashboard'
     | '/_app/quizzes'
@@ -136,16 +136,16 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   OauthLogsRoute: typeof OauthLogsRoute
-  TeamRoute: typeof TeamRoute
+  PricingRoute: typeof PricingRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/team': {
-      id: '/team'
-      path: '/team'
-      fullPath: '/team'
-      preLoaderRoute: typeof TeamRouteImport
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oauth-logs': {
@@ -227,7 +227,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   OauthLogsRoute: OauthLogsRoute,
-  TeamRoute: TeamRoute,
+  PricingRoute: PricingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
